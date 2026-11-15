@@ -18,7 +18,7 @@ export function App() {
         </nav>
       </header>
       <main>
-        {route.name === "run" ? <RunDetail key={route.id} id={route.id} step={route.step} /> : route.name === "pipeline" ? <Pipeline run={route.run} /> : <RunList />}
+        {route.name === "run" ? <RunDetail key={route.id} id={route.id} step={route.step} /> : route.name === "pipeline" ? <Pipeline run={route.run} tab={route.tab ?? "overview"} /> : <RunList />}
       </main>
     </>
   );

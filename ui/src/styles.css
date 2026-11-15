@@ -21,6 +21,12 @@ header .brand { font-weight: 700; color: var(--fg); text-decoration: none; }
 nav a { color: var(--dim); text-decoration: none; margin-right: 16px; }
 nav a.active { color: var(--fg); font-weight: 600; }
 main { padding: 16px 24px; max-width: 1200px; }
+/* A page's tabs (a pipeline's): an underline marks the open one. */
+nav.tabs { display: flex; gap: 4px; margin: 20px 0 16px; border-bottom: 1px solid var(--line); }
+nav.tabs a.tab { margin: 0 0 -1px; padding: 6px 12px; border-bottom: 2px solid transparent; }
+nav.tabs a.tab:hover { color: var(--fg); }
+nav.tabs a.tab.active { border-bottom-color: var(--accent); }
+[role="tabpanel"] > h2:first-child { margin-top: 0; }
 a { color: var(--accent); }
 h1 { font-size: 18px; margin: 0; }
 h2 { font-size: 15px; margin: 24px 0 8px; }
