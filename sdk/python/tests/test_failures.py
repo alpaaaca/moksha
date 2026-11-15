@@ -59,9 +59,9 @@ pools: [{name: default, min: 2, max: 2}]
 """)
     (tmp_path / "pyproject.toml").write_text('[tool.moksha]\nmodules = ["example_pipelines"]\n')
     out = tmp_path / "dev.out"
-    env = {**os.environ, "PYTHONPATH": os.pathsep.join([str(SDK / "src"), str(SDK / "tests")])}
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join([str(SDK / "src"), str(SDK / "tests")]), "MOKSHA_EXIT_ON_STDIN_EOF": "1"}
     dev = subprocess.Popen([moksha_bin, "dev", "--listen", f"127.0.0.1:{port}", "--python", sys.executable],
-                           cwd=tmp_path, env=env, stdout=open(out, "w"), stderr=subprocess.STDOUT)
+                           cwd=tmp_path, env=env, stdin=subprocess.PIPE, stdout=open(out, "w"), stderr=subprocess.STDOUT)
     try:
         until(lambda: out.read_text().count("polling default") == 2, 20, "two workers polling")
         pids = [int(p) for p in re.findall(r"started \(pid (\d+)\)", out.read_text())]
@@ -84,3 +84,36 @@ pools: [{name: default, min: 2, max: 2}]
                 os.kill(int(p), signal.SIGKILL)
             except ProcessLookupError:
                 pass
+
+
+def test_a_test_server_stops_when_pytest_is_killed(moksha_bin, tmp_path):
+    """A process that starts `moksha dev` as start_dev does and dies by
+    SIGKILL, so it can't stop the server: the server stops by itself."""
+    parent = subprocess.Popen([sys.executable, "-c", """
+import sys, time
+sys.path[:0] = sys.argv[1].split(",")
+from pathlib import Path
+from conftest import start_dev
+url, dev = start_dev(sys.argv[2], Path(sys.argv[3]))
+print(dev.pid, flush=True)
+time.sleep(600)
+""", f"{SDK / 'tests'},{SDK / 'src'}", moksha_bin, str(tmp_path)], stdout=subprocess.PIPE, text=True)
+    try:
+        pid = int(parent.stdout.readline())
+        parent.kill()
+        parent.wait()
+
+        def gone() -> bool:
+            try:
+                os.kill(pid, 0)
+                return False
+            except ProcessLookupError:
+                return True
+        until(gone, 15, f"moksha dev (pid {pid}) to stop after its parent was killed")
+        assert "stdin closed; stopping" in (tmp_path / "dev.log").read_text()
+    finally:
+        parent.kill()
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except (ProcessLookupError, NameError, UnboundLocalError):
+            pass

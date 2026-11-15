@@ -43,13 +43,16 @@ def moksha_bin(tmp_path_factory) -> str:
 def start_dev(moksha_bin: str, tmp: Path, url: str | None = None,
               config: Path | None = None) -> tuple[str, subprocess.Popen]:
     """A `moksha dev` with the API on url (default: a free port), data under
-    tmp, and the config file's other settings (its workers are not started)."""
+    tmp, and the config file's other settings (its workers are not started).
+    Its stdin is a pipe nothing writes to: if pytest dies without stopping
+    it (SIGKILL, a timeout), the pipe closes and the server stops too."""
     url = url or f"http://127.0.0.1:{_free_port()}"
     log = open(tmp / "dev.log", "a")
     proc = subprocess.Popen([moksha_bin, "dev", "--data-dir", str(tmp / "data"),
                              "--listen", url.removeprefix("http://"),
                              *(["--config", str(config), "--no-workers"] if config else [])],
-                            cwd=tmp, stdout=log, stderr=subprocess.STDOUT)
+                            cwd=tmp, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
+                            env={**os.environ, "MOKSHA_EXIT_ON_STDIN_EOF": "1"})
     client = mk.Client(url)
     for _ in range(100):
         try:

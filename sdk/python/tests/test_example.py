@@ -126,9 +126,9 @@ def test_dev_deploys_the_project_and_its_changes(moksha_bin, tmp_path):
     port = _free_port()
     url = f"http://127.0.0.1:{port}"
     log = tmp_path / "dev.log"
-    env = {**os.environ, "PYTHONPATH": str(SDK / "src")}
+    env = {**os.environ, "PYTHONPATH": str(SDK / "src"), "MOKSHA_EXIT_ON_STDIN_EOF": "1"}
     dev = subprocess.Popen([moksha_bin, "dev", "--listen", f"127.0.0.1:{port}", "--python", sys.executable],
-                           cwd=project, env=env, stdout=open(log, "w"), stderr=subprocess.STDOUT)
+                           cwd=project, env=env, stdin=subprocess.PIPE, stdout=open(log, "w"), stderr=subprocess.STDOUT)
 
     def wait_for(text: str, timeout: float = 30) -> None:
         deadline = time.time() + timeout
