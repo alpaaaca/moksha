@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -81,7 +79,7 @@ func runDev(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := stopContext()
 	defer stop()
 
 	scfg, err := serverConfig(cfg)
