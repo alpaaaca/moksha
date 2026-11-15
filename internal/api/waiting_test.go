@@ -53,6 +53,17 @@ func TestWaitingOverTheAPI(t *testing.T) {
 	assert.Equal(t, []string{"default"}, wk.Queues)
 	assert.Equal(t, []string{"run", "step"}, wk.Kinds)
 	assert.False(t, wk.Polling)
+
+	// The pipeline's workers: w1 took its replay; no step ran yet.
+	pw, err := c.GetPipelineWorkers(ctx, connect.NewRequest(&mokshav1.GetPipelineWorkersRequest{Name: "daily"}))
+	require.NoError(t, err)
+	require.Len(t, pw.Msg.Workers, 1)
+	p := pw.Msg.Workers[0]
+	assert.Equal(t, "w1", p.WorkerId)
+	assert.Equal(t, []int32{1, 1, 0}, []int32{p.Runs, p.Replays, p.Steps})
+	assert.Nil(t, p.StepMedian)
+	_, err = c.GetPipelineWorkers(ctx, connect.NewRequest(&mokshav1.GetPipelineWorkersRequest{}))
+	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 }
 
 func TestWaitingText(t *testing.T) {

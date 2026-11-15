@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mokshav1 "github.com/alper/moksha/internal/api/gen/moksha/v1"
@@ -132,6 +133,34 @@ func (s *RunServer) ListPools(ctx context.Context, _ *connect.Request[mokshav1.L
 			m.DecidedAt = timestamppb.New(p.DecidedAt)
 		}
 		out.Pools = append(out.Pools, m)
+	}
+	return connect.NewResponse(out), nil
+}
+
+func (s *RunServer) GetPipelineWorkers(ctx context.Context, req *connect.Request[mokshav1.GetPipelineWorkersRequest]) (*connect.Response[mokshav1.GetPipelineWorkersResponse], error) {
+	m := req.Msg
+	if m.Name == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("name: required"))
+	}
+	if m.Runs > 1000 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("runs %d: at most 1000", m.Runs))
+	}
+	ws, err := s.store.PipelineWorkerStats(ctx, m.Name, int(m.Runs))
+	if err != nil {
+		return nil, connectError(err)
+	}
+	out := &mokshav1.GetPipelineWorkersResponse{}
+	for _, w := range ws {
+		pw := &mokshav1.PipelineWorker{
+			WorkerId: w.WorkerID, Runs: int32(w.Runs), Steps: int32(w.Steps), StepsSucceeded: int32(w.StepsSucceeded),
+			StepsFailed: int32(w.StepsFailed), StepsLost: int32(w.StepsLost), StepsCancelled: int32(w.StepsCancelled),
+			Replays: int32(w.Replays), ReplaysFailed: int32(w.ReplaysFailed),
+			FirstAt: timestamppb.New(w.FirstAt), LastAt: timestamppb.New(w.LastAt),
+		}
+		if w.StepsSucceeded > 0 {
+			pw.StepMedian, pw.StepP95 = durationpb.New(w.StepMedian), durationpb.New(w.StepP95)
+		}
+		out.Workers = append(out.Workers, pw)
 	}
 	return connect.NewResponse(out), nil
 }

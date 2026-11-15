@@ -57,6 +57,9 @@ const (
 	RunServiceListPipelinesProcedure = "/moksha.v1.RunService/ListPipelines"
 	// RunServiceListWorkersProcedure is the fully-qualified name of the RunService's ListWorkers RPC.
 	RunServiceListWorkersProcedure = "/moksha.v1.RunService/ListWorkers"
+	// RunServiceGetPipelineWorkersProcedure is the fully-qualified name of the RunService's
+	// GetPipelineWorkers RPC.
+	RunServiceGetPipelineWorkersProcedure = "/moksha.v1.RunService/GetPipelineWorkers"
 	// RunServiceListPoolsProcedure is the fully-qualified name of the RunService's ListPools RPC.
 	RunServiceListPoolsProcedure = "/moksha.v1.RunService/ListPools"
 	// RunServiceListCodeProcedure is the fully-qualified name of the RunService's ListCode RPC.
@@ -99,6 +102,10 @@ type RunServiceClient interface {
 	// ListWorkers returns the workers that polled lately (the leader's
 	// memory, not state: a new leader learns them from their next polls).
 	ListWorkers(context.Context, *connect.Request[v1.ListWorkersRequest]) (*connect.Response[v1.ListWorkersResponse], error)
+	// GetPipelineWorkers says which workers worked on a pipeline's newest
+	// runs and what they did: from the stored step attempts and replays, so
+	// also workers that are gone.
+	GetPipelineWorkers(context.Context, *connect.Request[v1.GetPipelineWorkersRequest]) (*connect.Response[v1.GetPipelineWorkersResponse], error)
 	// ListPools returns the worker pools the server scales (worker groups
 	// with min below max) and their last scaling decision.
 	ListPools(context.Context, *connect.Request[v1.ListPoolsRequest]) (*connect.Response[v1.ListPoolsResponse], error)
@@ -190,6 +197,12 @@ func NewRunServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 			connect.WithSchema(runServiceMethods.ByName("ListWorkers")),
 			connect.WithClientOptions(opts...),
 		),
+		getPipelineWorkers: connect.NewClient[v1.GetPipelineWorkersRequest, v1.GetPipelineWorkersResponse](
+			httpClient,
+			baseURL+RunServiceGetPipelineWorkersProcedure,
+			connect.WithSchema(runServiceMethods.ByName("GetPipelineWorkers")),
+			connect.WithClientOptions(opts...),
+		),
 		listPools: connect.NewClient[v1.ListPoolsRequest, v1.ListPoolsResponse](
 			httpClient,
 			baseURL+RunServiceListPoolsProcedure,
@@ -213,20 +226,21 @@ func NewRunServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...
 
 // runServiceClient implements RunServiceClient.
 type runServiceClient struct {
-	startRun      *connect.Client[v1.StartRunRequest, v1.StartRunResponse]
-	getRun        *connect.Client[v1.GetRunRequest, v1.GetRunResponse]
-	signalRun     *connect.Client[v1.SignalRunRequest, v1.SignalRunResponse]
-	cancelRun     *connect.Client[v1.CancelRunRequest, v1.CancelRunResponse]
-	resumeRun     *connect.Client[v1.ResumeRunRequest, v1.ResumeRunResponse]
-	listRuns      *connect.Client[v1.ListRunsRequest, v1.ListRunsResponse]
-	getEventLog   *connect.Client[v1.GetEventLogRequest, v1.GetEventLogResponse]
-	getHistory    *connect.Client[v1.GetHistoryRequest, v1.GetHistoryResponse]
-	listSchedules *connect.Client[v1.ListSchedulesRequest, v1.ListSchedulesResponse]
-	listPipelines *connect.Client[v1.ListPipelinesRequest, v1.ListPipelinesResponse]
-	listWorkers   *connect.Client[v1.ListWorkersRequest, v1.ListWorkersResponse]
-	listPools     *connect.Client[v1.ListPoolsRequest, v1.ListPoolsResponse]
-	listCode      *connect.Client[v1.ListCodeRequest, v1.ListCodeResponse]
-	planRuns      *connect.Client[v1.PlanRunsRequest, v1.PlanRunsResponse]
+	startRun           *connect.Client[v1.StartRunRequest, v1.StartRunResponse]
+	getRun             *connect.Client[v1.GetRunRequest, v1.GetRunResponse]
+	signalRun          *connect.Client[v1.SignalRunRequest, v1.SignalRunResponse]
+	cancelRun          *connect.Client[v1.CancelRunRequest, v1.CancelRunResponse]
+	resumeRun          *connect.Client[v1.ResumeRunRequest, v1.ResumeRunResponse]
+	listRuns           *connect.Client[v1.ListRunsRequest, v1.ListRunsResponse]
+	getEventLog        *connect.Client[v1.GetEventLogRequest, v1.GetEventLogResponse]
+	getHistory         *connect.Client[v1.GetHistoryRequest, v1.GetHistoryResponse]
+	listSchedules      *connect.Client[v1.ListSchedulesRequest, v1.ListSchedulesResponse]
+	listPipelines      *connect.Client[v1.ListPipelinesRequest, v1.ListPipelinesResponse]
+	listWorkers        *connect.Client[v1.ListWorkersRequest, v1.ListWorkersResponse]
+	getPipelineWorkers *connect.Client[v1.GetPipelineWorkersRequest, v1.GetPipelineWorkersResponse]
+	listPools          *connect.Client[v1.ListPoolsRequest, v1.ListPoolsResponse]
+	listCode           *connect.Client[v1.ListCodeRequest, v1.ListCodeResponse]
+	planRuns           *connect.Client[v1.PlanRunsRequest, v1.PlanRunsResponse]
 }
 
 // StartRun calls moksha.v1.RunService.StartRun.
@@ -284,6 +298,11 @@ func (c *runServiceClient) ListWorkers(ctx context.Context, req *connect.Request
 	return c.listWorkers.CallUnary(ctx, req)
 }
 
+// GetPipelineWorkers calls moksha.v1.RunService.GetPipelineWorkers.
+func (c *runServiceClient) GetPipelineWorkers(ctx context.Context, req *connect.Request[v1.GetPipelineWorkersRequest]) (*connect.Response[v1.GetPipelineWorkersResponse], error) {
+	return c.getPipelineWorkers.CallUnary(ctx, req)
+}
+
 // ListPools calls moksha.v1.RunService.ListPools.
 func (c *runServiceClient) ListPools(ctx context.Context, req *connect.Request[v1.ListPoolsRequest]) (*connect.Response[v1.ListPoolsResponse], error) {
 	return c.listPools.CallUnary(ctx, req)
@@ -333,6 +352,10 @@ type RunServiceHandler interface {
 	// ListWorkers returns the workers that polled lately (the leader's
 	// memory, not state: a new leader learns them from their next polls).
 	ListWorkers(context.Context, *connect.Request[v1.ListWorkersRequest]) (*connect.Response[v1.ListWorkersResponse], error)
+	// GetPipelineWorkers says which workers worked on a pipeline's newest
+	// runs and what they did: from the stored step attempts and replays, so
+	// also workers that are gone.
+	GetPipelineWorkers(context.Context, *connect.Request[v1.GetPipelineWorkersRequest]) (*connect.Response[v1.GetPipelineWorkersResponse], error)
 	// ListPools returns the worker pools the server scales (worker groups
 	// with min below max) and their last scaling decision.
 	ListPools(context.Context, *connect.Request[v1.ListPoolsRequest]) (*connect.Response[v1.ListPoolsResponse], error)
@@ -420,6 +443,12 @@ func NewRunServiceHandler(svc RunServiceHandler, opts ...connect.HandlerOption) 
 		connect.WithSchema(runServiceMethods.ByName("ListWorkers")),
 		connect.WithHandlerOptions(opts...),
 	)
+	runServiceGetPipelineWorkersHandler := connect.NewUnaryHandler(
+		RunServiceGetPipelineWorkersProcedure,
+		svc.GetPipelineWorkers,
+		connect.WithSchema(runServiceMethods.ByName("GetPipelineWorkers")),
+		connect.WithHandlerOptions(opts...),
+	)
 	runServiceListPoolsHandler := connect.NewUnaryHandler(
 		RunServiceListPoolsProcedure,
 		svc.ListPools,
@@ -462,6 +491,8 @@ func NewRunServiceHandler(svc RunServiceHandler, opts ...connect.HandlerOption) 
 			runServiceListPipelinesHandler.ServeHTTP(w, r)
 		case RunServiceListWorkersProcedure:
 			runServiceListWorkersHandler.ServeHTTP(w, r)
+		case RunServiceGetPipelineWorkersProcedure:
+			runServiceGetPipelineWorkersHandler.ServeHTTP(w, r)
 		case RunServiceListPoolsProcedure:
 			runServiceListPoolsHandler.ServeHTTP(w, r)
 		case RunServiceListCodeProcedure:
@@ -519,6 +550,10 @@ func (UnimplementedRunServiceHandler) ListPipelines(context.Context, *connect.Re
 
 func (UnimplementedRunServiceHandler) ListWorkers(context.Context, *connect.Request[v1.ListWorkersRequest]) (*connect.Response[v1.ListWorkersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moksha.v1.RunService.ListWorkers is not implemented"))
+}
+
+func (UnimplementedRunServiceHandler) GetPipelineWorkers(context.Context, *connect.Request[v1.GetPipelineWorkersRequest]) (*connect.Response[v1.GetPipelineWorkersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moksha.v1.RunService.GetPipelineWorkers is not implemented"))
 }
 
 func (UnimplementedRunServiceHandler) ListPools(context.Context, *connect.Request[v1.ListPoolsRequest]) (*connect.Response[v1.ListPoolsResponse], error) {

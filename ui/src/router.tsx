@@ -1,14 +1,24 @@
-// A hash router: #/runs (the pipelines), #/pipelines/<run name>,
+// A hash router: #/runs (the pipelines), #/pipelines/<run name>[/<tab>],
 // #/runs/<id> (one run), #/runs/<id>/<seq> (one run, one step's logs). Hash routes need nothing from the
 // server, which serves index.html for every path anyway.
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 
-export type Route = { name: "runs" } | { name: "pipeline"; run: string } | { name: "run"; id: string; step?: number };
+// A pipeline page's tabs; the first is the default, left out of its URL.
+export const PIPELINE_TABS = ["overview", "runs", "workers", "start"] as const;
+export type PipelineTab = (typeof PIPELINE_TABS)[number];
+
+export type Route =
+  | { name: "runs" }
+  | { name: "pipeline"; run: string; tab?: PipelineTab }
+  | { name: "run"; id: string; step?: number };
 
 export function parse(hash: string): Route {
   const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
   if (parts[0] === "runs" && parts[1]) return { name: "run", id: parts[1], step: Number(parts[2]) || undefined };
-  if (parts[0] === "pipelines" && parts[1]) return { name: "pipeline", run: parts[1] };
+  if (parts[0] === "pipelines" && parts[1]) {
+    const tab = PIPELINE_TABS.find((t) => t === parts[2]);
+    return tab && tab !== "overview" ? { name: "pipeline", run: parts[1], tab } : { name: "pipeline", run: parts[1] };
+  }
   return { name: "runs" };
 }
 
@@ -17,7 +27,7 @@ export function href(r: Route): string {
     case "run":
       return `#/runs/${encodeURIComponent(r.id)}` + (r.step ? `/${r.step}` : "");
     case "pipeline":
-      return `#/pipelines/${encodeURIComponent(r.run)}`;
+      return `#/pipelines/${encodeURIComponent(r.run)}` + (r.tab && r.tab !== "overview" ? `/${r.tab}` : "");
     default:
       return "#/runs";
   }
@@ -37,11 +47,19 @@ export function useRoute(): Route {
   return route;
 }
 
-type LinkProps = { to: Route; children: ReactNode; className?: string; label?: string; onClick?: (e: MouseEvent) => void };
+type LinkProps = {
+  to: Route;
+  children: ReactNode;
+  className?: string;
+  label?: string;
+  onClick?: (e: MouseEvent) => void;
+  role?: string;
+  selected?: boolean;
+};
 
-export function Link({ to, children, className, label, onClick }: LinkProps) {
+export function Link({ to, children, className, label, onClick, role, selected }: LinkProps) {
   return (
-    <a href={href(to)} className={className} aria-label={label} title={label} onClick={onClick}>
+    <a href={href(to)} className={className} aria-label={label} title={label} onClick={onClick} role={role} aria-selected={selected}>
       {children}
     </a>
   );

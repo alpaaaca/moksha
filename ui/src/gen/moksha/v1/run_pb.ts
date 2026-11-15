@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moksha/v1/run.proto.
  */
 export const file_moksha_v1_run: GenFile = /*@__PURE__*/
-  fileDesc("ChNtb2tzaGEvdjEvcnVuLnByb3RvEgltb2tzaGEudjEiUwoPUGxhblJ1bnNSZXF1ZXN0Eg4KBnRlbmFudBgBIAEoCRIMCgRuYW1lGAIgASgJEhMKC3BhcmFtc19qc29uGAMgAygJEg0KBXJldXNlGAQgASgJIjUKEFBsYW5SdW5zUmVzcG9uc2USIQoFcGxhbnMYASADKAsyEi5tb2tzaGEudjEuUnVuUGxhbiKqAQoHUnVuUGxhbhITCgtwYXJhbXNfanNvbhgBIAEoCRIWCg5lYXJsaWVyX3J1bl9pZBgCIAEoCRIWCg5lYXJsaWVyX3N0YXR1cxgDIAEoCRI2ChJlYXJsaWVyX2NyZWF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiIKBXN0ZXBzGAUgAygLMhMubW9rc2hhLnYxLlN0ZXBQbGFuIkEKCFN0ZXBQbGFuEgsKA3NlcRgBIAEoBRIMCgRuYW1lGAIgASgJEg0KBXJldXNlGAMgASgIEgsKA3doeRgEIAEoCSIRCg9MaXN0Q29kZVJlcXVlc3QiVgoQTGlzdENvZGVSZXNwb25zZRIeCgVzdGVwcxgBIAMoCzIPLm1va3NoYS52MS5Db2RlEiIKCXBpcGVsaW5lcxgCIAMoCzIPLm1va3NoYS52MS5Db2RlIm8KBENvZGUSDAoEbmFtZRgBIAEoCRIUCgxjb2RlX3ZlcnNpb24YAiABKAkSEAoIYnVpbGRfaWQYAyABKAkSMQoNcmVnaXN0ZXJlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiEgoQTGlzdFBvb2xzUmVxdWVzdCIzChFMaXN0UG9vbHNSZXNwb25zZRIeCgVwb29scxgBIAMoCzIPLm1va3NoYS52MS5Qb29sIsYBCgRQb29sEgwKBG5hbWUYASABKAkSDgoGcXVldWVzGAIgAygJEgsKA21pbhgDIAEoBRILCgNtYXgYBCABKAUSDwoHd29ya2VycxgFIAMoCRIQCghzdGFydGluZxgGIAEoBRIQCghkZWNpc2lvbhgHIAEoCRIuCgpkZWNpZGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgdkZXNpcmVkGAkgASgFEhAKCGV4dGVybmFsGAogASgIIhQKEkxpc3RXb3JrZXJzUmVxdWVzdCI5ChNMaXN0V29ya2Vyc1Jlc3BvbnNlEiIKB3dvcmtlcnMYASADKAsyES5tb2tzaGEudjEuV29ya2VyIpYBCgZXb3JrZXISCgoCaWQYASABKAkSEAoIYnVpbGRfaWQYAiABKAkSDgoGcXVldWVzGAMgAygJEg0KBWtpbmRzGAQgAygJEi0KCWxhc3Rfc2VlbhgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDwoHcG9sbGluZxgGIAEoCBIPCgdydW5uaW5nGAcgASgFIhYKFExpc3RQaXBlbGluZXNSZXF1ZXN0Ij8KFUxpc3RQaXBlbGluZXNSZXNwb25zZRImCglwaXBlbGluZXMYASADKAsyEy5tb2tzaGEudjEuUGlwZWxpbmUiPAoIUGlwZWxpbmUSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCSKKAQoPTGlzdFJ1bnNSZXF1ZXN0Eg4KBnRlbmFudBgBIAEoCRIMCgRuYW1lGAIgASgJEhAKCHN0YXR1c2VzGAMgAygJEg0KBWxpbWl0GAQgASgFEhEKCXBhcmVudF9pZBgFIAEoCRIRCgliZWZvcmVfaWQYBiABKAkSEgoKd2l0aF9zdGVwcxgHIAEoCCIuChBDYW5jZWxSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCRIKCgJieRgCIAEoCSITChFDYW5jZWxSdW5SZXNwb25zZSIiChBSZXN1bWVSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCSITChFSZXN1bWVSdW5SZXNwb25zZSIwChBMaXN0UnVuc1Jlc3BvbnNlEhwKBHJ1bnMYASADKAsyDi5tb2tzaGEudjEuUnVuIiQKEkdldEV2ZW50TG9nUmVxdWVzdBIOCgZydW5faWQYASABKAkiXQoTR2V0RXZlbnRMb2dSZXNwb25zZRIbCgNydW4YASABKAsyDi5tb2tzaGEudjEuUnVuEikKCWV2ZW50X2xvZxgCIAMoCzIWLm1va3NoYS52MS5Mb2dnZWRFdmVudCJoCgtMb2dnZWRFdmVudBILCgNzZXEYASABKAMSDAoEdHlwZRgCIAEoCRIoCgR0aW1lGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIUCgxwYXlsb2FkX2pzb24YBCABKAkiIwoRR2V0SGlzdG9yeVJlcXVlc3QSDgoGcnVuX2lkGAEgASgJIj4KEkdldEhpc3RvcnlSZXNwb25zZRIoCgdlbnRyaWVzGAEgAygLMhcubW9rc2hhLnYxLkhpc3RvcnlFbnRyeSLMAQoMSGlzdG9yeUVudHJ5EigKBHRpbWUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEgwKBGtpbmQYAiABKAkSCwoDc2VxGAMgASgFEgwKBHN0ZXAYBCABKAkSDAoEdGV4dBgFIAEoCRIOCgZkZXRhaWwYBiABKAkSDgoGcnVuX2lkGAcgASgJEhEKCWV2ZW50X3NlcRgIIAEoAxISCgpldmVudF90eXBlGAkgASgJEhQKDHBheWxvYWRfanNvbhgKIAEoCSIWChRMaXN0U2NoZWR1bGVzUmVxdWVzdCJvChVMaXN0U2NoZWR1bGVzUmVzcG9uc2USJgoJc2NoZWR1bGVzGAEgAygLMhMubW9rc2hhLnYxLlNjaGVkdWxlEi4KDXN1YnNjcmlwdGlvbnMYAiADKAsyFy5tb2tzaGEudjEuU3Vic2NyaXB0aW9uIsIBCgxTdWJzY3JpcHRpb24SEAoIcGlwZWxpbmUYASABKAkSEAoIZGF0YXNldHMYAiADKAkSKwoIZGVib3VuY2UYAyABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb24SKwoIbWF4X3dhaXQYBCABKAsyGS5nb29nbGUucHJvdG9idWYuRHVyYXRpb24SEQoJbWF4X2JhdGNoGAUgASgFEhAKCGJ1aWxkX2lkGAYgASgJEg8KB3dhaXRpbmcYByABKAUi6AEKCFNjaGVkdWxlEhAKCHBpcGVsaW5lGAEgASgJEgwKBGNyb24YAiABKAkSEAoIdGltZXpvbmUYAyABKAkSEAoIaW50ZXJ2YWwYBCABKAkSEAoIY2F0Y2hfdXAYBSABKAkSEAoIYnVpbGRfaWQYBiABKAkSKgoGY3Vyc29yGAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIsCghuZXh0X3J1bhgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASGgoSbGF0ZXN0X3BhcmFtc19qc29uGAkgASgJIkYKEFNpZ25hbFJ1blJlcXVlc3QSDgoGcnVuX2lkGAEgASgJEgwKBG5hbWUYAiABKAkSFAoMcGF5bG9hZF9qc29uGAMgASgJIiYKEVNpZ25hbFJ1blJlc3BvbnNlEhEKCXNpZ25hbF9pZBgBIAEoCSJzCg9TdGFydFJ1blJlcXVlc3QSDgoGdGVuYW50GAEgASgJEgwKBG5hbWUYAiABKAkSDQoFcXVldWUYAyABKAkSEwoLcGFyYW1zX2pzb24YBCABKAkSDwoHdHJpZ2dlchgFIAEoCRINCgVyZXVzZRgGIAEoCSIiChBTdGFydFJ1blJlc3BvbnNlEg4KBnJ1bl9pZBgBIAEoCSIfCg1HZXRSdW5SZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCSItCg5HZXRSdW5SZXNwb25zZRIbCgNydW4YASABKAsyDi5tb2tzaGEudjEuUnVuIpYDCgNSdW4SCgoCaWQYASABKAkSDgoGdGVuYW50GAIgASgJEgwKBG5hbWUYAyABKAkSDgoGc3RhdHVzGAQgASgJEg4KBnJlYXNvbhgFIAEoCRIPCgdtZXNzYWdlGAYgASgJEhMKC3BhcmFtc19qc29uGAcgASgJEhMKC3Jlc3VsdF9qc29uGAggASgJEi4KCmNyZWF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC2ZpbmlzaGVkX2F0GAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIeCgVzdGVwcxgLIAMoCzIPLm1va3NoYS52MS5TdGVwEhEKCXBhcmVudF9pZBgMIAEoCRIUCgxjb250aW51ZWRfYXMYDSABKAkSDwoHdHJpZ2dlchgOIAEoCRIqCgtzdGVwX2NvdW50cxgPIAEoCzIVLm1va3NoYS52MS5TdGVwQ291bnRzEiMKB3dhaXRpbmcYECABKAsyEi5tb2tzaGEudjEuV2FpdGluZyK8AQoHV2FpdGluZxIOCgZyZWFzb24YASABKAkSDwoHbWVzc2FnZRgCIAEoCRIMCgRraW5kGAMgASgJEgwKBG5hbWUYBCABKAkSCwoDc2VxGAUgASgFEg0KBXF1ZXVlGAYgASgJEikKBXNpbmNlGAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgd3b3JrZXJzGAggASgFEg4KBmJ1aWxkcxgJIAMoCRIMCgRwb29sGAogASgJImEKClN0ZXBDb3VudHMSDQoFdG90YWwYASABKAUSEQoJY29tcGxldGVkGAIgASgFEg4KBnJldXNlZBgDIAEoBRIOCgZmYWlsZWQYBCABKAUSEQoJY2FuY2VsbGVkGAUgASgFIt0CCgRTdGVwEgsKA3NlcRgBIAEoBRIMCgRuYW1lGAIgASgJEg4KBnN0YXR1cxgDIAEoCRISCgpydW5fcmVhc29uGAQgASgJEg4KBnJldXNlZBgFIAEoCBIQCghhdHRlbXB0cxgGIAEoBRIUCgxkYXRhX3ZlcnNpb24YByABKAkSDgoGcmVhc29uGAggASgJEg8KB21lc3NhZ2UYCSABKAkSMAoMc2NoZWR1bGVkX2F0GAogASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtmaW5pc2hlZF9hdBgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEwoLcmVzdWx0X2pzb24YDCABKAkSDQoFYWZ0ZXIYDSADKAUSDwoHZGF0YXNldBgOIAEoCRILCgN3aHkYDyABKAkSGAoQc2FtZV9yZXN1bHRfcnVucxgQIAEoBTKOCAoKUnVuU2VydmljZRJDCghTdGFydFJ1bhIaLm1va3NoYS52MS5TdGFydFJ1blJlcXVlc3QaGy5tb2tzaGEudjEuU3RhcnRSdW5SZXNwb25zZRI9CgZHZXRSdW4SGC5tb2tzaGEudjEuR2V0UnVuUmVxdWVzdBoZLm1va3NoYS52MS5HZXRSdW5SZXNwb25zZRJGCglTaWduYWxSdW4SGy5tb2tzaGEudjEuU2lnbmFsUnVuUmVxdWVzdBocLm1va3NoYS52MS5TaWduYWxSdW5SZXNwb25zZRJGCglDYW5jZWxSdW4SGy5tb2tzaGEudjEuQ2FuY2VsUnVuUmVxdWVzdBocLm1va3NoYS52MS5DYW5jZWxSdW5SZXNwb25zZRJGCglSZXN1bWVSdW4SGy5tb2tzaGEudjEuUmVzdW1lUnVuUmVxdWVzdBocLm1va3NoYS52MS5SZXN1bWVSdW5SZXNwb25zZRJDCghMaXN0UnVucxIaLm1va3NoYS52MS5MaXN0UnVuc1JlcXVlc3QaGy5tb2tzaGEudjEuTGlzdFJ1bnNSZXNwb25zZRJMCgtHZXRFdmVudExvZxIdLm1va3NoYS52MS5HZXRFdmVudExvZ1JlcXVlc3QaHi5tb2tzaGEudjEuR2V0RXZlbnRMb2dSZXNwb25zZRJJCgpHZXRIaXN0b3J5EhwubW9rc2hhLnYxLkdldEhpc3RvcnlSZXF1ZXN0Gh0ubW9rc2hhLnYxLkdldEhpc3RvcnlSZXNwb25zZRJSCg1MaXN0U2NoZWR1bGVzEh8ubW9rc2hhLnYxLkxpc3RTY2hlZHVsZXNSZXF1ZXN0GiAubW9rc2hhLnYxLkxpc3RTY2hlZHVsZXNSZXNwb25zZRJSCg1MaXN0UGlwZWxpbmVzEh8ubW9rc2hhLnYxLkxpc3RQaXBlbGluZXNSZXF1ZXN0GiAubW9rc2hhLnYxLkxpc3RQaXBlbGluZXNSZXNwb25zZRJMCgtMaXN0V29ya2VycxIdLm1va3NoYS52MS5MaXN0V29ya2Vyc1JlcXVlc3QaHi5tb2tzaGEudjEuTGlzdFdvcmtlcnNSZXNwb25zZRJGCglMaXN0UG9vbHMSGy5tb2tzaGEudjEuTGlzdFBvb2xzUmVxdWVzdBocLm1va3NoYS52MS5MaXN0UG9vbHNSZXNwb25zZRJDCghMaXN0Q29kZRIaLm1va3NoYS52MS5MaXN0Q29kZVJlcXVlc3QaGy5tb2tzaGEudjEuTGlzdENvZGVSZXNwb25zZRJDCghQbGFuUnVucxIaLm1va3NoYS52MS5QbGFuUnVuc1JlcXVlc3QaGy5tb2tzaGEudjEuUGxhblJ1bnNSZXNwb25zZUI9WjtnaXRodWIuY29tL2FscGVyL21va3NoYS9pbnRlcm5hbC9hcGkvZ2VuL21va3NoYS92MTttb2tzaGF2MWIGcHJvdG8z", [file_google_protobuf_duration, file_google_protobuf_timestamp]);
+  fileDesc("ChNtb2tzaGEvdjEvcnVuLnByb3RvEgltb2tzaGEudjEiUwoPUGxhblJ1bnNSZXF1ZXN0Eg4KBnRlbmFudBgBIAEoCRIMCgRuYW1lGAIgASgJEhMKC3BhcmFtc19qc29uGAMgAygJEg0KBXJldXNlGAQgASgJIjUKEFBsYW5SdW5zUmVzcG9uc2USIQoFcGxhbnMYASADKAsyEi5tb2tzaGEudjEuUnVuUGxhbiKqAQoHUnVuUGxhbhITCgtwYXJhbXNfanNvbhgBIAEoCRIWCg5lYXJsaWVyX3J1bl9pZBgCIAEoCRIWCg5lYXJsaWVyX3N0YXR1cxgDIAEoCRI2ChJlYXJsaWVyX2NyZWF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiIKBXN0ZXBzGAUgAygLMhMubW9rc2hhLnYxLlN0ZXBQbGFuIkEKCFN0ZXBQbGFuEgsKA3NlcRgBIAEoBRIMCgRuYW1lGAIgASgJEg0KBXJldXNlGAMgASgIEgsKA3doeRgEIAEoCSIRCg9MaXN0Q29kZVJlcXVlc3QiVgoQTGlzdENvZGVSZXNwb25zZRIeCgVzdGVwcxgBIAMoCzIPLm1va3NoYS52MS5Db2RlEiIKCXBpcGVsaW5lcxgCIAMoCzIPLm1va3NoYS52MS5Db2RlIm8KBENvZGUSDAoEbmFtZRgBIAEoCRIUCgxjb2RlX3ZlcnNpb24YAiABKAkSEAoIYnVpbGRfaWQYAyABKAkSMQoNcmVnaXN0ZXJlZF9hdBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiEgoQTGlzdFBvb2xzUmVxdWVzdCIzChFMaXN0UG9vbHNSZXNwb25zZRIeCgVwb29scxgBIAMoCzIPLm1va3NoYS52MS5Qb29sIsYBCgRQb29sEgwKBG5hbWUYASABKAkSDgoGcXVldWVzGAIgAygJEgsKA21pbhgDIAEoBRILCgNtYXgYBCABKAUSDwoHd29ya2VycxgFIAMoCRIQCghzdGFydGluZxgGIAEoBRIQCghkZWNpc2lvbhgHIAEoCRIuCgpkZWNpZGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIPCgdkZXNpcmVkGAkgASgFEhAKCGV4dGVybmFsGAogASgIIhQKEkxpc3RXb3JrZXJzUmVxdWVzdCI5ChNMaXN0V29ya2Vyc1Jlc3BvbnNlEiIKB3dvcmtlcnMYASADKAsyES5tb2tzaGEudjEuV29ya2VyIpYBCgZXb3JrZXISCgoCaWQYASABKAkSEAoIYnVpbGRfaWQYAiABKAkSDgoGcXVldWVzGAMgAygJEg0KBWtpbmRzGAQgAygJEi0KCWxhc3Rfc2VlbhgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDwoHcG9sbGluZxgGIAEoCBIPCgdydW5uaW5nGAcgASgFIjcKGUdldFBpcGVsaW5lV29ya2Vyc1JlcXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRydW5zGAIgASgFIkgKGkdldFBpcGVsaW5lV29ya2Vyc1Jlc3BvbnNlEioKB3dvcmtlcnMYASADKAsyGS5tb2tzaGEudjEuUGlwZWxpbmVXb3JrZXIi/QIKDlBpcGVsaW5lV29ya2VyEhEKCXdvcmtlcl9pZBgBIAEoCRIMCgRydW5zGAIgASgFEg0KBXN0ZXBzGAMgASgFEhcKD3N0ZXBzX3N1Y2NlZWRlZBgEIAEoBRIUCgxzdGVwc19mYWlsZWQYBSABKAUSEgoKc3RlcHNfbG9zdBgGIAEoBRIXCg9zdGVwc19jYW5jZWxsZWQYByABKAUSDwoHcmVwbGF5cxgIIAEoBRIWCg5yZXBsYXlzX2ZhaWxlZBgJIAEoBRIuCgtzdGVwX21lZGlhbhgKIAEoCzIZLmdvb2dsZS5wcm90b2J1Zi5EdXJhdGlvbhIrCghzdGVwX3A5NRgLIAEoCzIZLmdvb2dsZS5wcm90b2J1Zi5EdXJhdGlvbhIsCghmaXJzdF9hdBgMIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKwoHbGFzdF9hdBgNIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiFgoUTGlzdFBpcGVsaW5lc1JlcXVlc3QiPwoVTGlzdFBpcGVsaW5lc1Jlc3BvbnNlEiYKCXBpcGVsaW5lcxgBIAMoCzITLm1va3NoYS52MS5QaXBlbGluZSI8CghQaXBlbGluZRIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIooBCg9MaXN0UnVuc1JlcXVlc3QSDgoGdGVuYW50GAEgASgJEgwKBG5hbWUYAiABKAkSEAoIc3RhdHVzZXMYAyADKAkSDQoFbGltaXQYBCABKAUSEQoJcGFyZW50X2lkGAUgASgJEhEKCWJlZm9yZV9pZBgGIAEoCRISCgp3aXRoX3N0ZXBzGAcgASgIIi4KEENhbmNlbFJ1blJlcXVlc3QSDgoGcnVuX2lkGAEgASgJEgoKAmJ5GAIgASgJIhMKEUNhbmNlbFJ1blJlc3BvbnNlIiIKEFJlc3VtZVJ1blJlcXVlc3QSDgoGcnVuX2lkGAEgASgJIhMKEVJlc3VtZVJ1blJlc3BvbnNlIjAKEExpc3RSdW5zUmVzcG9uc2USHAoEcnVucxgBIAMoCzIOLm1va3NoYS52MS5SdW4iJAoSR2V0RXZlbnRMb2dSZXF1ZXN0Eg4KBnJ1bl9pZBgBIAEoCSJdChNHZXRFdmVudExvZ1Jlc3BvbnNlEhsKA3J1bhgBIAEoCzIOLm1va3NoYS52MS5SdW4SKQoJZXZlbnRfbG9nGAIgAygLMhYubW9rc2hhLnYxLkxvZ2dlZEV2ZW50ImgKC0xvZ2dlZEV2ZW50EgsKA3NlcRgBIAEoAxIMCgR0eXBlGAIgASgJEigKBHRpbWUYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhQKDHBheWxvYWRfanNvbhgEIAEoCSIjChFHZXRIaXN0b3J5UmVxdWVzdBIOCgZydW5faWQYASABKAkiPgoSR2V0SGlzdG9yeVJlc3BvbnNlEigKB2VudHJpZXMYASADKAsyFy5tb2tzaGEudjEuSGlzdG9yeUVudHJ5IswBCgxIaXN0b3J5RW50cnkSKAoEdGltZRgBIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDAoEa2luZBgCIAEoCRILCgNzZXEYAyABKAUSDAoEc3RlcBgEIAEoCRIMCgR0ZXh0GAUgASgJEg4KBmRldGFpbBgGIAEoCRIOCgZydW5faWQYByABKAkSEQoJZXZlbnRfc2VxGAggASgDEhIKCmV2ZW50X3R5cGUYCSABKAkSFAoMcGF5bG9hZF9qc29uGAogASgJIhYKFExpc3RTY2hlZHVsZXNSZXF1ZXN0Im8KFUxpc3RTY2hlZHVsZXNSZXNwb25zZRImCglzY2hlZHVsZXMYASADKAsyEy5tb2tzaGEudjEuU2NoZWR1bGUSLgoNc3Vic2NyaXB0aW9ucxgCIAMoCzIXLm1va3NoYS52MS5TdWJzY3JpcHRpb24iwgEKDFN1YnNjcmlwdGlvbhIQCghwaXBlbGluZRgBIAEoCRIQCghkYXRhc2V0cxgCIAMoCRIrCghkZWJvdW5jZRgDIAEoCzIZLmdvb2dsZS5wcm90b2J1Zi5EdXJhdGlvbhIrCghtYXhfd2FpdBgEIAEoCzIZLmdvb2dsZS5wcm90b2J1Zi5EdXJhdGlvbhIRCgltYXhfYmF0Y2gYBSABKAUSEAoIYnVpbGRfaWQYBiABKAkSDwoHd2FpdGluZxgHIAEoBSLoAQoIU2NoZWR1bGUSEAoIcGlwZWxpbmUYASABKAkSDAoEY3JvbhgCIAEoCRIQCgh0aW1lem9uZRgDIAEoCRIQCghpbnRlcnZhbBgEIAEoCRIQCghjYXRjaF91cBgFIAEoCRIQCghidWlsZF9pZBgGIAEoCRIqCgZjdXJzb3IYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEiwKCG5leHRfcnVuGAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIaChJsYXRlc3RfcGFyYW1zX2pzb24YCSABKAkiRgoQU2lnbmFsUnVuUmVxdWVzdBIOCgZydW5faWQYASABKAkSDAoEbmFtZRgCIAEoCRIUCgxwYXlsb2FkX2pzb24YAyABKAkiJgoRU2lnbmFsUnVuUmVzcG9uc2USEQoJc2lnbmFsX2lkGAEgASgJInMKD1N0YXJ0UnVuUmVxdWVzdBIOCgZ0ZW5hbnQYASABKAkSDAoEbmFtZRgCIAEoCRINCgVxdWV1ZRgDIAEoCRITCgtwYXJhbXNfanNvbhgEIAEoCRIPCgd0cmlnZ2VyGAUgASgJEg0KBXJldXNlGAYgASgJIiIKEFN0YXJ0UnVuUmVzcG9uc2USDgoGcnVuX2lkGAEgASgJIh8KDUdldFJ1blJlcXVlc3QSDgoGcnVuX2lkGAEgASgJIi0KDkdldFJ1blJlc3BvbnNlEhsKA3J1bhgBIAEoCzIOLm1va3NoYS52MS5SdW4ilgMKA1J1bhIKCgJpZBgBIAEoCRIOCgZ0ZW5hbnQYAiABKAkSDAoEbmFtZRgDIAEoCRIOCgZzdGF0dXMYBCABKAkSDgoGcmVhc29uGAUgASgJEg8KB21lc3NhZ2UYBiABKAkSEwoLcGFyYW1zX2pzb24YByABKAkSEwoLcmVzdWx0X2pzb24YCCABKAkSLgoKY3JlYXRlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLZmluaXNoZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEh4KBXN0ZXBzGAsgAygLMg8ubW9rc2hhLnYxLlN0ZXASEQoJcGFyZW50X2lkGAwgASgJEhQKDGNvbnRpbnVlZF9hcxgNIAEoCRIPCgd0cmlnZ2VyGA4gASgJEioKC3N0ZXBfY291bnRzGA8gASgLMhUubW9rc2hhLnYxLlN0ZXBDb3VudHMSIwoHd2FpdGluZxgQIAEoCzISLm1va3NoYS52MS5XYWl0aW5nIrwBCgdXYWl0aW5nEg4KBnJlYXNvbhgBIAEoCRIPCgdtZXNzYWdlGAIgASgJEgwKBGtpbmQYAyABKAkSDAoEbmFtZRgEIAEoCRILCgNzZXEYBSABKAUSDQoFcXVldWUYBiABKAkSKQoFc2luY2UYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB3dvcmtlcnMYCCABKAUSDgoGYnVpbGRzGAkgAygJEgwKBHBvb2wYCiABKAkiYQoKU3RlcENvdW50cxINCgV0b3RhbBgBIAEoBRIRCgljb21wbGV0ZWQYAiABKAUSDgoGcmV1c2VkGAMgASgFEg4KBmZhaWxlZBgEIAEoBRIRCgljYW5jZWxsZWQYBSABKAUi3QIKBFN0ZXASCwoDc2VxGAEgASgFEgwKBG5hbWUYAiABKAkSDgoGc3RhdHVzGAMgASgJEhIKCnJ1bl9yZWFzb24YBCABKAkSDgoGcmV1c2VkGAUgASgIEhAKCGF0dGVtcHRzGAYgASgFEhQKDGRhdGFfdmVyc2lvbhgHIAEoCRIOCgZyZWFzb24YCCABKAkSDwoHbWVzc2FnZRgJIAEoCRIwCgxzY2hlZHVsZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC2ZpbmlzaGVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBITCgtyZXN1bHRfanNvbhgMIAEoCRINCgVhZnRlchgNIAMoBRIPCgdkYXRhc2V0GA4gASgJEgsKA3doeRgPIAEoCRIYChBzYW1lX3Jlc3VsdF9ydW5zGBAgASgFMvEICgpSdW5TZXJ2aWNlEkMKCFN0YXJ0UnVuEhoubW9rc2hhLnYxLlN0YXJ0UnVuUmVxdWVzdBobLm1va3NoYS52MS5TdGFydFJ1blJlc3BvbnNlEj0KBkdldFJ1bhIYLm1va3NoYS52MS5HZXRSdW5SZXF1ZXN0GhkubW9rc2hhLnYxLkdldFJ1blJlc3BvbnNlEkYKCVNpZ25hbFJ1bhIbLm1va3NoYS52MS5TaWduYWxSdW5SZXF1ZXN0GhwubW9rc2hhLnYxLlNpZ25hbFJ1blJlc3BvbnNlEkYKCUNhbmNlbFJ1bhIbLm1va3NoYS52MS5DYW5jZWxSdW5SZXF1ZXN0GhwubW9rc2hhLnYxLkNhbmNlbFJ1blJlc3BvbnNlEkYKCVJlc3VtZVJ1bhIbLm1va3NoYS52MS5SZXN1bWVSdW5SZXF1ZXN0GhwubW9rc2hhLnYxLlJlc3VtZVJ1blJlc3BvbnNlEkMKCExpc3RSdW5zEhoubW9rc2hhLnYxLkxpc3RSdW5zUmVxdWVzdBobLm1va3NoYS52MS5MaXN0UnVuc1Jlc3BvbnNlEkwKC0dldEV2ZW50TG9nEh0ubW9rc2hhLnYxLkdldEV2ZW50TG9nUmVxdWVzdBoeLm1va3NoYS52MS5HZXRFdmVudExvZ1Jlc3BvbnNlEkkKCkdldEhpc3RvcnkSHC5tb2tzaGEudjEuR2V0SGlzdG9yeVJlcXVlc3QaHS5tb2tzaGEudjEuR2V0SGlzdG9yeVJlc3BvbnNlElIKDUxpc3RTY2hlZHVsZXMSHy5tb2tzaGEudjEuTGlzdFNjaGVkdWxlc1JlcXVlc3QaIC5tb2tzaGEudjEuTGlzdFNjaGVkdWxlc1Jlc3BvbnNlElIKDUxpc3RQaXBlbGluZXMSHy5tb2tzaGEudjEuTGlzdFBpcGVsaW5lc1JlcXVlc3QaIC5tb2tzaGEudjEuTGlzdFBpcGVsaW5lc1Jlc3BvbnNlEkwKC0xpc3RXb3JrZXJzEh0ubW9rc2hhLnYxLkxpc3RXb3JrZXJzUmVxdWVzdBoeLm1va3NoYS52MS5MaXN0V29ya2Vyc1Jlc3BvbnNlEmEKEkdldFBpcGVsaW5lV29ya2VycxIkLm1va3NoYS52MS5HZXRQaXBlbGluZVdvcmtlcnNSZXF1ZXN0GiUubW9rc2hhLnYxLkdldFBpcGVsaW5lV29ya2Vyc1Jlc3BvbnNlEkYKCUxpc3RQb29scxIbLm1va3NoYS52MS5MaXN0UG9vbHNSZXF1ZXN0GhwubW9rc2hhLnYxLkxpc3RQb29sc1Jlc3BvbnNlEkMKCExpc3RDb2RlEhoubW9rc2hhLnYxLkxpc3RDb2RlUmVxdWVzdBobLm1va3NoYS52MS5MaXN0Q29kZVJlc3BvbnNlEkMKCFBsYW5SdW5zEhoubW9rc2hhLnYxLlBsYW5SdW5zUmVxdWVzdBobLm1va3NoYS52MS5QbGFuUnVuc1Jlc3BvbnNlQj1aO2dpdGh1Yi5jb20vYWxwZXIvbW9rc2hhL2ludGVybmFsL2FwaS9nZW4vbW9rc2hhL3YxO21va3NoYXYxYgZwcm90bzM", [file_google_protobuf_duration, file_google_protobuf_timestamp]);
 
 /**
  * @generated from message moksha.v1.PlanRunsRequest
@@ -406,6 +406,143 @@ export const WorkerSchema: GenMessage<Worker> = /*@__PURE__*/
   messageDesc(file_moksha_v1_run, 12);
 
 /**
+ * @generated from message moksha.v1.GetPipelineWorkersRequest
+ */
+export type GetPipelineWorkersRequest = Message<"moksha.v1.GetPipelineWorkersRequest"> & {
+  /**
+   * The pipeline's name in code.
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * How many of its newest runs; default 100, at most 1000.
+   *
+   * @generated from field: int32 runs = 2;
+   */
+  runs: number;
+};
+
+/**
+ * Describes the message moksha.v1.GetPipelineWorkersRequest.
+ * Use `create(GetPipelineWorkersRequestSchema)` to create a new message.
+ */
+export const GetPipelineWorkersRequestSchema: GenMessage<GetPipelineWorkersRequest> = /*@__PURE__*/
+  messageDesc(file_moksha_v1_run, 13);
+
+/**
+ * @generated from message moksha.v1.GetPipelineWorkersResponse
+ */
+export type GetPipelineWorkersResponse = Message<"moksha.v1.GetPipelineWorkersResponse"> & {
+  /**
+   * Busiest first.
+   *
+   * @generated from field: repeated moksha.v1.PipelineWorker workers = 1;
+   */
+  workers: PipelineWorker[];
+};
+
+/**
+ * Describes the message moksha.v1.GetPipelineWorkersResponse.
+ * Use `create(GetPipelineWorkersResponseSchema)` to create a new message.
+ */
+export const GetPipelineWorkersResponseSchema: GenMessage<GetPipelineWorkersResponse> = /*@__PURE__*/
+  messageDesc(file_moksha_v1_run, 14);
+
+/**
+ * PipelineWorker is what one worker did for a pipeline's runs, by worker
+ * ID: a pool's workers keep theirs (<pool>-<n>) when restarted; one run by
+ * hand is <hostname>-<pid> by default, a new one each start. Reused steps
+ * took no worker and don't count.
+ *
+ * @generated from message moksha.v1.PipelineWorker
+ */
+export type PipelineWorker = Message<"moksha.v1.PipelineWorker"> & {
+  /**
+   * @generated from field: string worker_id = 1;
+   */
+  workerId: string;
+
+  /**
+   * Distinct runs it worked on.
+   *
+   * @generated from field: int32 runs = 2;
+   */
+  runs: number;
+
+  /**
+   * Step attempts it took, and how they ended.
+   *
+   * @generated from field: int32 steps = 3;
+   */
+  steps: number;
+
+  /**
+   * @generated from field: int32 steps_succeeded = 4;
+   */
+  stepsSucceeded: number;
+
+  /**
+   * @generated from field: int32 steps_failed = 5;
+   */
+  stepsFailed: number;
+
+  /**
+   * @generated from field: int32 steps_lost = 6;
+   */
+  stepsLost: number;
+
+  /**
+   * @generated from field: int32 steps_cancelled = 7;
+   */
+  stepsCancelled: number;
+
+  /**
+   * Replays of pipeline code (run tasks) it took; failed or lost.
+   *
+   * @generated from field: int32 replays = 8;
+   */
+  replays: number;
+
+  /**
+   * @generated from field: int32 replays_failed = 9;
+   */
+  replaysFailed: number;
+
+  /**
+   * How long its succeeded steps ran; unset without one.
+   *
+   * @generated from field: google.protobuf.Duration step_median = 10;
+   */
+  stepMedian?: Duration | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Duration step_p95 = 11;
+   */
+  stepP95?: Duration | undefined;
+
+  /**
+   * Its first and last work for these runs.
+   *
+   * @generated from field: google.protobuf.Timestamp first_at = 12;
+   */
+  firstAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp last_at = 13;
+   */
+  lastAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message moksha.v1.PipelineWorker.
+ * Use `create(PipelineWorkerSchema)` to create a new message.
+ */
+export const PipelineWorkerSchema: GenMessage<PipelineWorker> = /*@__PURE__*/
+  messageDesc(file_moksha_v1_run, 15);
+
+/**
  * @generated from message moksha.v1.ListPipelinesRequest
  */
 export type ListPipelinesRequest = Message<"moksha.v1.ListPipelinesRequest"> & {
@@ -416,7 +553,7 @@ export type ListPipelinesRequest = Message<"moksha.v1.ListPipelinesRequest"> & {
  * Use `create(ListPipelinesRequestSchema)` to create a new message.
  */
 export const ListPipelinesRequestSchema: GenMessage<ListPipelinesRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 13);
+  messageDesc(file_moksha_v1_run, 16);
 
 /**
  * @generated from message moksha.v1.ListPipelinesResponse
@@ -433,7 +570,7 @@ export type ListPipelinesResponse = Message<"moksha.v1.ListPipelinesResponse"> &
  * Use `create(ListPipelinesResponseSchema)` to create a new message.
  */
 export const ListPipelinesResponseSchema: GenMessage<ListPipelinesResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 14);
+  messageDesc(file_moksha_v1_run, 17);
 
 /**
  * @generated from message moksha.v1.Pipeline
@@ -464,7 +601,7 @@ export type Pipeline = Message<"moksha.v1.Pipeline"> & {
  * Use `create(PipelineSchema)` to create a new message.
  */
 export const PipelineSchema: GenMessage<Pipeline> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 15);
+  messageDesc(file_moksha_v1_run, 18);
 
 /**
  * @generated from message moksha.v1.ListRunsRequest
@@ -522,7 +659,7 @@ export type ListRunsRequest = Message<"moksha.v1.ListRunsRequest"> & {
  * Use `create(ListRunsRequestSchema)` to create a new message.
  */
 export const ListRunsRequestSchema: GenMessage<ListRunsRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 16);
+  messageDesc(file_moksha_v1_run, 19);
 
 /**
  * @generated from message moksha.v1.CancelRunRequest
@@ -546,7 +683,7 @@ export type CancelRunRequest = Message<"moksha.v1.CancelRunRequest"> & {
  * Use `create(CancelRunRequestSchema)` to create a new message.
  */
 export const CancelRunRequestSchema: GenMessage<CancelRunRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 17);
+  messageDesc(file_moksha_v1_run, 20);
 
 /**
  * @generated from message moksha.v1.CancelRunResponse
@@ -559,7 +696,7 @@ export type CancelRunResponse = Message<"moksha.v1.CancelRunResponse"> & {
  * Use `create(CancelRunResponseSchema)` to create a new message.
  */
 export const CancelRunResponseSchema: GenMessage<CancelRunResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 18);
+  messageDesc(file_moksha_v1_run, 21);
 
 /**
  * @generated from message moksha.v1.ResumeRunRequest
@@ -576,7 +713,7 @@ export type ResumeRunRequest = Message<"moksha.v1.ResumeRunRequest"> & {
  * Use `create(ResumeRunRequestSchema)` to create a new message.
  */
 export const ResumeRunRequestSchema: GenMessage<ResumeRunRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 19);
+  messageDesc(file_moksha_v1_run, 22);
 
 /**
  * @generated from message moksha.v1.ResumeRunResponse
@@ -589,7 +726,7 @@ export type ResumeRunResponse = Message<"moksha.v1.ResumeRunResponse"> & {
  * Use `create(ResumeRunResponseSchema)` to create a new message.
  */
 export const ResumeRunResponseSchema: GenMessage<ResumeRunResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 20);
+  messageDesc(file_moksha_v1_run, 23);
 
 /**
  * @generated from message moksha.v1.ListRunsResponse
@@ -606,7 +743,7 @@ export type ListRunsResponse = Message<"moksha.v1.ListRunsResponse"> & {
  * Use `create(ListRunsResponseSchema)` to create a new message.
  */
 export const ListRunsResponseSchema: GenMessage<ListRunsResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 21);
+  messageDesc(file_moksha_v1_run, 24);
 
 /**
  * @generated from message moksha.v1.GetEventLogRequest
@@ -623,7 +760,7 @@ export type GetEventLogRequest = Message<"moksha.v1.GetEventLogRequest"> & {
  * Use `create(GetEventLogRequestSchema)` to create a new message.
  */
 export const GetEventLogRequestSchema: GenMessage<GetEventLogRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 22);
+  messageDesc(file_moksha_v1_run, 25);
 
 /**
  * @generated from message moksha.v1.GetEventLogResponse
@@ -647,7 +784,7 @@ export type GetEventLogResponse = Message<"moksha.v1.GetEventLogResponse"> & {
  * Use `create(GetEventLogResponseSchema)` to create a new message.
  */
 export const GetEventLogResponseSchema: GenMessage<GetEventLogResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 23);
+  messageDesc(file_moksha_v1_run, 26);
 
 /**
  * @generated from message moksha.v1.LoggedEvent
@@ -679,7 +816,7 @@ export type LoggedEvent = Message<"moksha.v1.LoggedEvent"> & {
  * Use `create(LoggedEventSchema)` to create a new message.
  */
 export const LoggedEventSchema: GenMessage<LoggedEvent> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 24);
+  messageDesc(file_moksha_v1_run, 27);
 
 /**
  * @generated from message moksha.v1.GetHistoryRequest
@@ -696,7 +833,7 @@ export type GetHistoryRequest = Message<"moksha.v1.GetHistoryRequest"> & {
  * Use `create(GetHistoryRequestSchema)` to create a new message.
  */
 export const GetHistoryRequestSchema: GenMessage<GetHistoryRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 25);
+  messageDesc(file_moksha_v1_run, 28);
 
 /**
  * @generated from message moksha.v1.GetHistoryResponse
@@ -713,7 +850,7 @@ export type GetHistoryResponse = Message<"moksha.v1.GetHistoryResponse"> & {
  * Use `create(GetHistoryResponseSchema)` to create a new message.
  */
 export const GetHistoryResponseSchema: GenMessage<GetHistoryResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 26);
+  messageDesc(file_moksha_v1_run, 29);
 
 /**
  * HistoryEntry is one event of a run, told for people (internal/history).
@@ -790,7 +927,7 @@ export type HistoryEntry = Message<"moksha.v1.HistoryEntry"> & {
  * Use `create(HistoryEntrySchema)` to create a new message.
  */
 export const HistoryEntrySchema: GenMessage<HistoryEntry> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 27);
+  messageDesc(file_moksha_v1_run, 30);
 
 /**
  * @generated from message moksha.v1.ListSchedulesRequest
@@ -803,7 +940,7 @@ export type ListSchedulesRequest = Message<"moksha.v1.ListSchedulesRequest"> & {
  * Use `create(ListSchedulesRequestSchema)` to create a new message.
  */
 export const ListSchedulesRequestSchema: GenMessage<ListSchedulesRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 28);
+  messageDesc(file_moksha_v1_run, 31);
 
 /**
  * @generated from message moksha.v1.ListSchedulesResponse
@@ -825,7 +962,7 @@ export type ListSchedulesResponse = Message<"moksha.v1.ListSchedulesResponse"> &
  * Use `create(ListSchedulesResponseSchema)` to create a new message.
  */
 export const ListSchedulesResponseSchema: GenMessage<ListSchedulesResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 29);
+  messageDesc(file_moksha_v1_run, 32);
 
 /**
  * @generated from message moksha.v1.Subscription
@@ -874,7 +1011,7 @@ export type Subscription = Message<"moksha.v1.Subscription"> & {
  * Use `create(SubscriptionSchema)` to create a new message.
  */
 export const SubscriptionSchema: GenMessage<Subscription> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 30);
+  messageDesc(file_moksha_v1_run, 33);
 
 /**
  * @generated from message moksha.v1.Schedule
@@ -940,7 +1077,7 @@ export type Schedule = Message<"moksha.v1.Schedule"> & {
  * Use `create(ScheduleSchema)` to create a new message.
  */
 export const ScheduleSchema: GenMessage<Schedule> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 31);
+  messageDesc(file_moksha_v1_run, 34);
 
 /**
  * @generated from message moksha.v1.SignalRunRequest
@@ -971,7 +1108,7 @@ export type SignalRunRequest = Message<"moksha.v1.SignalRunRequest"> & {
  * Use `create(SignalRunRequestSchema)` to create a new message.
  */
 export const SignalRunRequestSchema: GenMessage<SignalRunRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 32);
+  messageDesc(file_moksha_v1_run, 35);
 
 /**
  * @generated from message moksha.v1.SignalRunResponse
@@ -988,7 +1125,7 @@ export type SignalRunResponse = Message<"moksha.v1.SignalRunResponse"> & {
  * Use `create(SignalRunResponseSchema)` to create a new message.
  */
 export const SignalRunResponseSchema: GenMessage<SignalRunResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 33);
+  messageDesc(file_moksha_v1_run, 36);
 
 /**
  * @generated from message moksha.v1.StartRunRequest
@@ -1042,7 +1179,7 @@ export type StartRunRequest = Message<"moksha.v1.StartRunRequest"> & {
  * Use `create(StartRunRequestSchema)` to create a new message.
  */
 export const StartRunRequestSchema: GenMessage<StartRunRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 34);
+  messageDesc(file_moksha_v1_run, 37);
 
 /**
  * @generated from message moksha.v1.StartRunResponse
@@ -1059,7 +1196,7 @@ export type StartRunResponse = Message<"moksha.v1.StartRunResponse"> & {
  * Use `create(StartRunResponseSchema)` to create a new message.
  */
 export const StartRunResponseSchema: GenMessage<StartRunResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 35);
+  messageDesc(file_moksha_v1_run, 38);
 
 /**
  * @generated from message moksha.v1.GetRunRequest
@@ -1076,7 +1213,7 @@ export type GetRunRequest = Message<"moksha.v1.GetRunRequest"> & {
  * Use `create(GetRunRequestSchema)` to create a new message.
  */
 export const GetRunRequestSchema: GenMessage<GetRunRequest> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 36);
+  messageDesc(file_moksha_v1_run, 39);
 
 /**
  * @generated from message moksha.v1.GetRunResponse
@@ -1093,7 +1230,7 @@ export type GetRunResponse = Message<"moksha.v1.GetRunResponse"> & {
  * Use `create(GetRunResponseSchema)` to create a new message.
  */
 export const GetRunResponseSchema: GenMessage<GetRunResponse> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 37);
+  messageDesc(file_moksha_v1_run, 40);
 
 /**
  * @generated from message moksha.v1.Run
@@ -1200,7 +1337,7 @@ export type Run = Message<"moksha.v1.Run"> & {
  * Use `create(RunSchema)` to create a new message.
  */
 export const RunSchema: GenMessage<Run> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 38);
+  messageDesc(file_moksha_v1_run, 41);
 
 /**
  * Waiting is a run's queued work and why no worker runs it yet.
@@ -1281,7 +1418,7 @@ export type Waiting = Message<"moksha.v1.Waiting"> & {
  * Use `create(WaitingSchema)` to create a new message.
  */
 export const WaitingSchema: GenMessage<Waiting> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 39);
+  messageDesc(file_moksha_v1_run, 42);
 
 /**
  * @generated from message moksha.v1.StepCounts
@@ -1320,7 +1457,7 @@ export type StepCounts = Message<"moksha.v1.StepCounts"> & {
  * Use `create(StepCountsSchema)` to create a new message.
  */
 export const StepCountsSchema: GenMessage<StepCounts> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 40);
+  messageDesc(file_moksha_v1_run, 43);
 
 /**
  * @generated from message moksha.v1.Step
@@ -1438,7 +1575,7 @@ export type Step = Message<"moksha.v1.Step"> & {
  * Use `create(StepSchema)` to create a new message.
  */
 export const StepSchema: GenMessage<Step> = /*@__PURE__*/
-  messageDesc(file_moksha_v1_run, 41);
+  messageDesc(file_moksha_v1_run, 44);
 
 /**
  * RunService is what people and tools call: start runs and follow them.
@@ -1566,6 +1703,18 @@ export const RunService: GenService<{
     methodKind: "unary";
     input: typeof ListWorkersRequestSchema;
     output: typeof ListWorkersResponseSchema;
+  },
+  /**
+   * GetPipelineWorkers says which workers worked on a pipeline's newest
+   * runs and what they did: from the stored step attempts and replays, so
+   * also workers that are gone.
+   *
+   * @generated from rpc moksha.v1.RunService.GetPipelineWorkers
+   */
+  getPipelineWorkers: {
+    methodKind: "unary";
+    input: typeof GetPipelineWorkersRequestSchema;
+    output: typeof GetPipelineWorkersResponseSchema;
   },
   /**
    * ListPools returns the worker pools the server scales (worker groups
