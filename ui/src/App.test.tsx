@@ -211,7 +211,8 @@ test("a pipeline: its run history by step, its steps, starting a run", async () 
 test("a pipeline: its steps as a graph, all its runs, starting one; a tab each", async () => {
   const { calls } = show("#/pipelines/daily");
   const graph = await screen.findByRole("list", { name: "steps graph" });
-  expect(within(graph).getAllByRole("listitem").map((n) => n.textContent)).toEqual(["extract→ raw.orders", "build", "report"]);
+  expect(within(graph).getAllByRole("listitem").map((n) => n.textContent)).toEqual(["extractraw.orders", "build", "report"]);
+  expect(within(graph).getByTitle("writes raw.orders")).toHaveTextContent("raw.orders");
   const tabs = screen.getByRole("tablist", { name: "pipeline" });
   expect(within(tabs).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Overview", "Runs", "Workers", "Start a run"]);
   expect(within(tabs).getByRole("tab", { selected: true })).toHaveTextContent("Overview");
@@ -259,7 +260,10 @@ test("a run: steps on a timeline, children, events, signal and cancel", async ()
   expect(screen.getByText(/on its schedule/)).toBeInTheDocument();
   const graph = screen.getByRole("list", { name: "steps graph" });
   const nodes = within(graph).getAllByRole("listitem").map((n) => n.textContent);
-  expect(nodes.slice(0, 2)).toEqual(["extractcompleted2.5 s→ raw.orders", "buildreused0 ms"]);
+  expect(nodes.slice(0, 2)).toEqual(["extractcompleted2.5 sraw.orders", "buildreused0 ms"]);
+  expect(within(graph).getAllByRole("listitem").map((n) => n.className)).toEqual([
+    "dag-node node-completed clickable", "dag-node node-reused clickable", "dag-node node-running clickable",
+  ]);
   expect(nodes[2]).toMatch(/^reportrunning/); // for as long as it has been running
   const steps = screen.getAllByRole("table")[0];
   const extract = within(steps).getByText("extract").closest("tr")!;

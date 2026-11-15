@@ -1,10 +1,10 @@
 import type { Step } from "../gen/moksha/v1/run_pb";
 import { duration, stepStatus, Status, took } from "../format";
 
-const W = 200; // node width
-const H = 80; // node height
-const GX = 56; // gap between columns
-const GY = 14; // gap between rows
+const W = 220; // node width
+const H = 84; // node height
+const GX = 72; // gap between columns
+const GY = 20; // gap between rows
 
 type Node = { key: string; name: string; col: number; row: number; steps: Step[]; dataset: string };
 
@@ -52,8 +52,38 @@ function groupStatus(steps: Step[]): string {
   return ss.every((s) => s === "reused") ? "reused" : "completed";
 }
 
-// Dag draws a run's steps as boxes in columns, with arrows from the steps
-// whose data versions each one reads.
+// Icons, 16 units square, drawn in the current color.
+const ICONS: Record<string, string> = {
+  completed: "M3.5 8.5l3 3 6-7",
+  failed: "M4.5 4.5l7 7M11.5 4.5l-7 7",
+  cancelled: "M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11M4.2 11.8l7.6-7.6",
+  retrying: "M13 8a5 5 0 1 1-1.6-3.7M13 2.8v3h-3",
+  reused: "M3 8a5 5 0 1 0 1.6-3.7M3 2.8v3h3",
+  waiting: "M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11M8 5v3.2l2.2 1.4",
+  step: "M8 1.8l5.5 3.1v6.2L8 14.2l-5.5-3.1V4.9zM2.5 4.9L8 8l5.5-3.1M8 8v6.2",
+  dataset:
+    "M2.5 4c0-1.1 2.5-2 5.5-2s5.5.9 5.5 2v8c0 1.1-2.5 2-5.5 2s-5.5-.9-5.5-2zM2.5 4c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2",
+};
+
+function Icon({ name, size = 16 }: { name: string; size?: number }) {
+  if (name === "running") {
+    return (
+      <svg className="dag-spin" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
+        <path d="M8 2.5a5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
+      <path d={ICONS[name] ?? ICONS.step} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Dag draws a run's steps as cards in columns on a canvas, with curves from
+// the steps whose data versions each one reads. plain: no statuses (a
+// pipeline's steps rather than a run's).
 export function Dag({
   steps,
   now,
@@ -68,6 +98,7 @@ export function Dag({
   onSelect?: (seq: number) => void; // clicking a node picks its (first) step
 }) {
   const { nodes, edges } = layout(steps);
+  const status = new Map(nodes.map((n) => [n.key, plain ? "plain" : groupStatus(n.steps)]));
   const cols = Math.max(...nodes.map((n) => n.col)) + 1;
   const rows = Math.max(...nodes.map((n) => n.row)) + 1;
   const width = cols * W + (cols - 1) * GX;
@@ -75,51 +106,70 @@ export function Dag({
   const x = (n: Node) => n.col * (W + GX);
   const y = (n: Node) => n.row * (H + GY);
   return (
-    <div className="dag-scroll">
+    <div className="dag-canvas">
       <div className="dag" style={{ width, height }} role="list" aria-label="steps graph">
         <svg width={width} height={height} aria-hidden="true">
-          <defs>
-            <marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M0,0 L8,4 L0,8 z" className="dag-arrow" />
-            </marker>
-          </defs>
           {edges.map(([a, b]) => {
             const x1 = x(a) + W;
             const y1 = y(a) + H / 2;
-            const x2 = x(b) - 2;
+            const x2 = x(b);
             const y2 = y(b) + H / 2;
             const mid = (x1 + x2) / 2;
-            return <path key={a.key + ">" + b.key} d={`M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}`} className="dag-edge" markerEnd="url(#arrow)" />;
+            const to = status.get(b.key);
+            return (
+              <g key={a.key + ">" + b.key} className={`dag-edge edge-${to}`}>
+                <path d={`M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}`} />
+                <circle cx={x1} cy={y1} r="3.5" />
+                <circle cx={x2} cy={y2} r="3.5" />
+              </g>
+            );
           })}
         </svg>
         {nodes.map((n) => {
-          const status = groupStatus(n.steps);
+          const st = status.get(n.key)!;
           const one = n.steps.length === 1 ? n.steps[0] : undefined;
           const done = n.steps.filter((l) => l.status === "completed").length;
           const t = one && took(one.scheduledAt, one.finishedAt, now);
+          const cls = [
+            "dag-node",
+            `node-${st}`,
+            n.steps.length > 1 && "stacked",
+            onSelect && "clickable",
+            n.steps.some((l) => l.seq === selected) && "selected",
+          ].filter(Boolean);
           return (
             <div
               key={n.key}
               role="listitem"
-              className={`dag-node${plain ? "" : ` node-${status}`}${onSelect ? " clickable" : ""}${n.steps.some((l) => l.seq === selected) ? " selected" : ""}`}
+              className={cls.join(" ")}
               style={{ left: x(n), top: y(n), width: W, height: H }}
               onClick={onSelect && (() => onSelect(n.steps[0].seq))}
               title={onSelect ? "show its logs" : undefined}
             >
-              <div className="dag-name" title={n.name}>
-                {n.steps.length > 1 && <span className="dim">{n.steps.length} × </span>}
-                {n.name}
+              <div className="dag-badge" title={plain ? "step" : st}>
+                <Icon name={plain ? "step" : st} />
               </div>
-              {!plain && (
-                <div className="dag-meta">
-                  <Status status={status} />
-                  <span className="dim small">{one ? (t === undefined ? "" : duration(t)) : `${done} of ${n.steps.length} done`}</span>
+              <div className="dag-body">
+                <div className="dag-name" title={n.name}>
+                  {n.name}
                 </div>
-              )}
-              {n.dataset && (
-                <div className="dim small dag-dataset" title={`writes ${n.dataset}`}>
-                  → {n.dataset}
-                </div>
+                {!plain && (
+                  <div className="dag-meta">
+                    <Status status={st} />
+                    <span className="dim small">{one ? (t === undefined ? "" : duration(t)) : `${done} of ${n.steps.length} done`}</span>
+                  </div>
+                )}
+                {n.dataset && (
+                  <div className="dag-dataset" title={`writes ${n.dataset}`}>
+                    <Icon name="dataset" size={12} />
+                    <span>{n.dataset}</span>
+                  </div>
+                )}
+              </div>
+              {n.steps.length > 1 && (
+                <span className="dag-count" title={`${n.steps.length} steps of this name`}>
+                  ×{n.steps.length}
+                </span>
               )}
             </div>
           );
