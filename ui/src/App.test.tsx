@@ -110,6 +110,16 @@ function fakeServer() {
         record("listWorkers", {});
         return { workers: [] };
       },
+      getPipelineWorkers(req) {
+        record("getPipelineWorkers", req);
+        return {
+          workers: [
+            { workerId: "host-41", runs: 3, steps: 7, stepsSucceeded: 5, stepsFailed: 1, stepsLost: 1, replays: 4,
+              stepMedian: { seconds: 2n, nanos: 500_000_000 }, stepP95: { seconds: 12n }, firstAt: t0, lastAt: t0 },
+            { workerId: "host-42", runs: 1, replays: 1, replaysFailed: 1, firstAt: t0, lastAt: t0 },
+          ],
+        };
+      },
       listPools() {
         return {
           pools: [
@@ -203,10 +213,11 @@ test("a pipeline: its steps as a graph, all its runs, starting one", async () =>
   expect(within(graph).getAllByRole("listitem").map((n) => n.textContent)).toEqual(["extract→ raw.orders", "build", "report"]);
 
   await userEvent.click(screen.getByText("All runs, as a list"));
-  const runs = await screen.findByRole("table");
+  const list = screen.getByText("All runs, as a list").closest("details")!;
+  const runs = await within(list).findByRole("table");
   expect(within(runs).getByText("2026-10-23").closest("tr")).toHaveTextContent("3 steps · all reused");
   await userEvent.selectOptions(screen.getByLabelText("status"), "completed");
-  await waitFor(() => expect(within(screen.getByRole("table")).queryByText("2026-10-24")).not.toBeInTheDocument());
+  await waitFor(() => expect(within(within(list).getByRole("table")).queryByText("2026-10-24")).not.toBeInTheDocument());
   expect(calls.listRuns.at(-1)).toMatchObject({ name: "daily", statuses: ["completed"] });
 
   // Starting a run: the inputs start as the latest run's.
@@ -342,4 +353,20 @@ test("a run that doesn't wait shows no reason", async () => {
   show("#/runs/01M6AAAAAAAAAAAAAAAAAAAAAA");
   expect(await screen.findByRole("heading", { name: "Daily revenue" })).toBeInTheDocument();
   expect(screen.queryByText(/^Waiting:/)).not.toBeInTheDocument();
+});
+
+test("a pipeline: the workers that worked on its runs", async () => {
+  const { calls } = show("#/pipelines/daily");
+  const table = await screen.findByRole("table", { name: "pipeline workers" });
+  expect(screen.getByText(/workers worked on its last/)).toHaveTextContent(
+    "2 workers worked on its last 100 runs (7 step attempts); 0 connected now.",
+  );
+  const busy = within(table).getByText("host-41").closest("tr")!;
+  expect(busy).toHaveTextContent("7 (5 succeeded, 1 failed, 1 lost)");
+  expect(busy).toHaveTextContent("2.5 s median, 12 s p95");
+  expect(busy).toHaveTextContent("gone");
+  const replays = within(table).getByText("host-42").closest("tr")!;
+  expect(replays).toHaveTextContent("1 (1 failed)");
+  expect(replays).toHaveTextContent("–");
+  expect(calls.getPipelineWorkers[0]).toMatchObject({ name: "daily", runs: 100 });
 });

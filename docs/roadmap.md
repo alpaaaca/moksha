@@ -305,6 +305,14 @@ each is one PR:
    UI shows it on the run (with the workers) and in run lists;
    `moksha start --wait`, `replay` and `moksha dev` print it once a
    run has waited a few seconds.
+   ✅ **A pipeline's workers**: `GetPipelineWorkers` says, from the
+   stored step attempts and replays of a pipeline's newest runs (100 by
+   default), which workers worked on them: runs, steps and how they ended
+   (succeeded, failed, lost, cancelled), replays, step time (median, p95)
+   and their last work. The pipeline's page in the web UI shows it, with
+   which of them are connected now. By worker ID: a pool's workers keep
+   theirs (`<pool>-<n>`) when restarted, a worker run by hand gets a new
+   one each start; not yet by pool or build.
    ✅ **Worker pools** (worker-pools step 2): a `workers:` group with
    `min` and `max` is scaled by `moksha server` and `dev` from the work
    waiting on its `queues` (`steps` per worker), down after `idle_after`;

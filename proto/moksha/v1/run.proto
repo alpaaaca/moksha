@@ -42,6 +42,10 @@ service RunService {
   // ListWorkers returns the workers that polled lately (the leader's
   // memory, not state: a new leader learns them from their next polls).
   rpc ListWorkers(ListWorkersRequest) returns (ListWorkersResponse);
+  // GetPipelineWorkers says which workers worked on a pipeline's newest
+  // runs and what they did: from the stored step attempts and replays, so
+  // also workers that are gone.
+  rpc GetPipelineWorkers(GetPipelineWorkersRequest) returns (GetPipelineWorkersResponse);
   // ListPools returns the worker pools the server scales (worker groups
   // with min below max) and their last scaling decision.
   rpc ListPools(ListPoolsRequest) returns (ListPoolsResponse);
@@ -141,6 +145,41 @@ message Worker {
   bool polling = 6;
   // Tasks it runs: steps and pipeline replays.
   int32 running = 7;
+}
+
+message GetPipelineWorkersRequest {
+  // The pipeline's name in code.
+  string name = 1;
+  // How many of its newest runs; default 100, at most 1000.
+  int32 runs = 2;
+}
+message GetPipelineWorkersResponse {
+  // Busiest first.
+  repeated PipelineWorker workers = 1;
+}
+// PipelineWorker is what one worker did for a pipeline's runs, by worker
+// ID: a pool's workers keep theirs (<pool>-<n>) when restarted; one run by
+// hand is <hostname>-<pid> by default, a new one each start. Reused steps
+// took no worker and don't count.
+message PipelineWorker {
+  string worker_id = 1;
+  // Distinct runs it worked on.
+  int32 runs = 2;
+  // Step attempts it took, and how they ended.
+  int32 steps = 3;
+  int32 steps_succeeded = 4;
+  int32 steps_failed = 5;
+  int32 steps_lost = 6;
+  int32 steps_cancelled = 7;
+  // Replays of pipeline code (run tasks) it took; failed or lost.
+  int32 replays = 8;
+  int32 replays_failed = 9;
+  // How long its succeeded steps ran; unset without one.
+  google.protobuf.Duration step_median = 10;
+  google.protobuf.Duration step_p95 = 11;
+  // Its first and last work for these runs.
+  google.protobuf.Timestamp first_at = 12;
+  google.protobuf.Timestamp last_at = 13;
 }
 
 message ListPipelinesRequest {}

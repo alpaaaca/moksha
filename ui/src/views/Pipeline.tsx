@@ -7,6 +7,7 @@ import { usePipelines } from "../pipelines";
 import { Link } from "../router";
 import { Hint } from "../words";
 import { Dag } from "./Dag";
+import { PipelineWorkers } from "./PipelineWorkers";
 import { RunHistory } from "./RunHistory";
 import { RunsTable, StartRun, StatusFilter, summary } from "./RunList";
 
@@ -14,7 +15,8 @@ const HISTORY = 30;
 
 // Pipeline: one pipeline (a run by name): what it is and how it is
 // started, its recent runs by step (RunHistory), its steps as a graph (from
-// its newest run: pipeline code decides its steps as it runs), and all its runs.
+// its newest run: pipeline code decides its steps as it runs), the workers
+// that worked on it, and all its runs.
 export function Pipeline({ run }: { run: string }) {
   const api = useApi();
   const pipelines = usePipelines();
@@ -98,6 +100,9 @@ export function Pipeline({ run }: { run: string }) {
       ) : (
         <p className="dim">{all.data ? "no run has steps yet" : "loading…"}</p>
       )}
+
+      <h2>Workers</h2>
+      <PipelineWorkers run={run} />
 
       <h2>Start a run</h2>
       {/* A scheduled pipeline takes its data interval as an input: start with the latest one. */}
