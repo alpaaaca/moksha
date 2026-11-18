@@ -171,6 +171,27 @@ export function stepStatus(l: Step): string {
 }
 
 // Status is a status as a colored dot and its word.
+// checkpointed: the step has ended (done, reused, failed or cancelled), so
+// how it ended is saved in the run's event log and it won't run again in
+// this run, whatever restarts. The core writes the step's StepFinished event
+// in the same transaction as its status.
+export function checkpointed(l: Step): boolean {
+  return l.status === "completed" || l.status === "failed" || l.status === "cancelled";
+}
+
+// unsaved says what happens to a step that isn't checkpointed yet if the
+// server or its worker stops now.
+export function unsaved(l: Step): string {
+  switch (stepStatus(l)) {
+    case "running":
+      return "running: if its worker or the server stops, it runs again";
+    case "retrying":
+      return "waits to retry: nothing saved yet";
+    default:
+      return "not started: nothing saved yet";
+  }
+}
+
 export function Status({ status }: { status: string }) {
   return (
     <span className={`status status-${status}`}>

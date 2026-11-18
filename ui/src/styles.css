@@ -250,8 +250,24 @@ nav.tabs a.tab.active { color: var(--fg); background: var(--hover); box-shadow: 
 
 .steps td { vertical-align: middle; }
 .steps td:nth-child(4) { white-space: nowrap; }
+.checkpoint { white-space: nowrap; }
+.checkpoint .saved { display: inline-flex; align-items: center; gap: 5px; color: var(--ok); font-weight: 500; }
+.checkpoint .saved .mono { font-weight: 400; }
+
+/* Durability: how much of a run is checkpointed. */
+.durability {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+}
+.durability > svg { color: var(--ok); }
+.durability-bar { display: inline-flex; gap: 2px; }
+.durability-bar i { width: 14px; height: 6px; border-radius: 2px; background: var(--line-strong); }
+.durability-bar i.saved { background: var(--ok); }
+.durability-bar i.running { background: var(--run); animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
 .steps td:first-child strong { font-family: var(--mono); font-weight: 600; }
-.timeline-head { width: 30%; }
+.timeline-head { width: 20%; }
+.steps td:nth-child(6) { min-width: 200px; }
 .track { position: relative; height: 8px; border-radius: 4px; background: var(--hover); }
 .bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--run); }
 .bar-completed { background: var(--ok); }
@@ -337,6 +353,11 @@ nav.tabs a.tab.active { color: var(--fg); background: var(--hover); box-shadow: 
 }
 .dag-dataset svg { flex: none; }
 .dag-dataset span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dag-saved {
+  position: absolute; right: -7px; bottom: -7px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  color: var(--ok); background: var(--card); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 45%, transparent), 0 0 0 3px var(--bg);
+}
+.dag-saved.partial { color: var(--dim); box-shadow: 0 0 0 1px var(--line-strong), 0 0 0 3px var(--bg); }
 .dag-count { position: absolute; top: -9px; right: -9px; padding: 1px 7px; border-radius: 999px; font: 700 11px var(--mono); color: var(--bg); background: var(--fg); box-shadow: 0 0 0 2px var(--bg); }
 .node-completed { --tone: var(--ok); }
 .node-failed, .node-cancelled { --tone: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
@@ -372,6 +393,6 @@ nav.tabs a.tab.active { color: var(--fg); background: var(--hover); box-shadow: 
 .palette-foot kbd { margin-right: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .edge-running path, .node-running .dag-badge, .spin, .status .dot { animation: none !important; }
+  .edge-running path, .node-running .dag-badge, .spin, .status .dot, .durability-bar i { animation: none !important; }
   .dag-node { transition: none; }
 }

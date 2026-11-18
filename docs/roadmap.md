@@ -269,7 +269,10 @@ each is one PR:
    reused (instead of the grid of squares), with failed and running
    steps; a run's page leads with its output and data versions, then the
    graph, its steps, logs as a terminal and what happened as a timeline.
-   `with_steps` steps now carry their dataset.
+   `with_steps` steps now carry their dataset. A run's page says which
+   steps are checkpointed (how they ended is saved in the run's event
+   log, so a restart won't run them again): how many, a marker on the
+   graph, and when each was saved or what a restart would do to it.
    ✅ **Plain words**, added to this step: a run's page tells what
    happened in sentences instead of raw events ("extract_orders done in
    0.8 s, wrote a new version of raw.orders for 2026-10-28", "reused the

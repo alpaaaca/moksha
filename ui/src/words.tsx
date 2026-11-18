@@ -11,6 +11,8 @@ export const WORDS = {
   dataset: "A named table or file, such as raw.orders, that gets a new version each time a step writes it (per day, for example).",
   inputs: "The values a run was started with, such as the day it is for.",
   history: "What happened in this run, in order: each step queued, started, done or reused, retries and waits.",
+  checkpoint:
+    "When a step ends, moksha saves how it ended (its result, or its failure) in the run's event log before going on. A checkpointed step never runs again in that run, even if the server or a worker restarts: the run reads its saved result instead.",
   schedule: "When the pipeline runs on its own (a cron expression), and which slice of data (interval) each run covers.",
 } as const;
 

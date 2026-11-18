@@ -14,6 +14,7 @@ const PATHS: Record<string, string> = {
   runs: "M2.5 8h2.5l1.5-4 3 8 1.5-4h2.5",
   workers: "M3 3h10v4H3zM3 9h10v4H3zM5.5 5h.01M5.5 11h.01",
   arrow: "M3 8h10M9.5 4.5L13 8l-3.5 3.5",
+  saved: "M8 1.8l5 2v3.6c0 3.1-2.1 5.5-5 6.8-2.9-1.3-5-3.7-5-6.8V3.8zM5.6 8.1l1.7 1.7 3.2-3.4",
 };
 
 export function Icon({ name, size = 16 }: { name: string; size?: number }) {

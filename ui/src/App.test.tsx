@@ -426,3 +426,30 @@ test("the sidebar moves between pages; the palette (⌘K) finds a pipeline or ru
   await userEvent.keyboard("{Escape}");
   expect(screen.queryByRole("dialog", { name: "search" })).not.toBeInTheDocument();
 });
+
+test("a run says which steps are checkpointed: saved in its event log, so a restart won't run them again", async () => {
+  show("#/runs/01M6AAAAAAAAAAAAAAAAAAAAAA");
+  const summary = await screen.findByRole("status", { name: "durability" });
+  expect(summary).toHaveTextContent("2 of 3 steps checkpointed");
+  expect(summary).toHaveTextContent("If the server or a worker stops now, these stay done and the run picks up from here; the others run again.");
+  expect([...summary.querySelectorAll(".durability-bar i")].map((i) => i.className)).toEqual(["saved", "saved", "running"]);
+
+  // On the graph: a marker on each checkpointed step.
+  const graph = screen.getByRole("list", { name: "steps graph" });
+  const marked = within(graph).getAllByRole("listitem").map((n) => n.querySelector(".dag-saved") !== null);
+  expect(marked).toEqual([true, true, false]);
+
+  // In the steps table: when each was saved, or what a restart would do.
+  const table = screen.getAllByRole("table")[0];
+  expect(within(table).getByText("extract").closest("tr")!.querySelector(".checkpoint")).toHaveTextContent("saved");
+  expect(within(table).getByText("report").closest("tr")!.querySelector(".checkpoint")).toHaveTextContent(
+    "running: if its worker or the server stops, it runs again",
+  );
+});
+
+test("a finished run is checkpointed throughout", async () => {
+  show("#/runs/01M6EEEEEEEEEEEEEEEEEEEEEE");
+  const summary = await screen.findByRole("status", { name: "durability" });
+  expect(summary).toHaveTextContent("2 of 2 steps checkpointed");
+  expect(summary).toHaveTextContent("How each step ended is saved in the run's event log.");
+});
