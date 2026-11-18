@@ -170,8 +170,22 @@ export function stepStatus(l: Step): string {
   }
 }
 
+// Status is a status as a colored dot and its word.
 export function Status({ status }: { status: string }) {
-  return <span className={`status status-${status}`}>{status}</span>;
+  return (
+    <span className={`status status-${status}`}>
+      <span className="dot" aria-hidden="true" />
+      {status}
+    </span>
+  );
+}
+
+// inputsText says what a run was started with, in a line: "day 2026-10-24".
+export function inputsText(h: Run): string {
+  const v = parse(h.paramsJson || "{}");
+  if (!v || typeof v !== "object" || Array.isArray(v)) return h.paramsJson;
+  const parts = Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k} ${scalar(x)}`);
+  return parts.length ? parts.join(", ") : "no inputs";
 }
 
 // steps sums up a run's steps in a few words.

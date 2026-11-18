@@ -31,7 +31,7 @@ function fakeServer() {
         seq: 1, name: "extract", status: "completed", attempts: 1, runReason: "no previous run", why: "it ran because it hasn't run with these inputs before",
         dataVersion: "01M6DATAVERSIONDATAVER0001", scheduledAt: at(0), finishedAt: at(2.5), resultJson: '{"rows": 6}', dataset: "raw.orders",
       }),
-      create(StepSchema, { seq: 2, name: "build", status: "completed", attempts: 0, reused: true, why: "same inputs and same code as before, so it didn't run again", scheduledAt: at(3), finishedAt: at(3), after: [1] }),
+      create(StepSchema, { seq: 2, name: "build", status: "completed", attempts: 0, reused: true, why: "same inputs and same code as before, so it didn't run again", scheduledAt: at(3), finishedAt: at(3), after: [1], dataset: "mart.revenue" }),
       create(StepSchema, { seq: 3, name: "report", status: "dispatched", attempts: 1, runReason: "code changed", scheduledAt: at(3), after: [2] }),
     ],
   });
@@ -189,29 +189,34 @@ test("the start page: each pipeline's meta information, not its runs", async () 
   await waitFor(() => expect(window.location.hash).toBe("#/pipelines/daily"));
 });
 
-test("a pipeline: its run history by step, its steps, starting a run", async () => {
+test("a pipeline: its recent runs told by their data", async () => {
   const { calls } = show("#/pipelines/daily");
   expect(await screen.findByRole("heading", { name: "Daily revenue" })).toBeInTheDocument();
+  expect(screen.getByRole("navigation", { name: "breadcrumb" })).toHaveTextContent("PipelinesDaily revenue");
   expect(screen.getByText(/on a schedule/)).toHaveTextContent("0 3 * * * (Europe/Berlin), daily data");
   expect(screen.getByText("next run").nextElementSibling).toHaveTextContent("in 5 h");
 
-  // The history: a row per step, a column per run (oldest first).
-  const grid = await screen.findByRole("grid", { name: "run history" });
-  const rows = within(grid).getAllByRole("row");
-  expect(rows.map((r) => within(r).getByRole("rowheader").textContent)).toEqual(["extract", "build", "report"]);
-  const cells = (r: HTMLElement) => [...r.querySelectorAll(".history-cell")].map((c) => c.className.replace("history-cell ", ""));
-  expect(cells(rows[1])).toEqual(["cell-failed", "none", "cell-reused"]); // broken, done (no steps), daily
-  expect(cells(rows[2])).toEqual(["none", "none", "cell-running"]);
+  // A run each, newest first: what it wrote and reused, what failed or still runs.
+  const feed = await screen.findByRole("list", { name: "recent runs" });
+  const runs = within(feed).getAllByRole("link");
+  expect(runs.map((r) => r.getAttribute("aria-label"))).toEqual([
+    "run of day 2026-10-24: running", "run of day 2026-10-23: completed", "run of day 2026-10-22: failed",
+  ]);
+  const chips = (r: HTMLElement) => [...r.querySelectorAll(".chip")].map((c) => `${c.className.replace("chip ", "")} ${c.textContent}`);
+  expect(chips(runs[0])).toEqual(["wrote raw.orders", "reused mart.revenue", "busy report"]);
+  expect(chips(runs[1])).toEqual([]);
+  expect(runs[1]).toHaveTextContent("3 steps · all reused");
+  expect(chips(runs[2])).toEqual(["failed build failed"]);
   expect(calls.listRuns.find((r) => (r as { withSteps?: boolean }).withSteps)).toMatchObject({ name: "daily", withSteps: true });
-  // A square opens the run on that step.
-  await userEvent.click(within(rows[1]).getAllByRole("link")[0]);
-  await waitFor(() => expect(window.location.hash).toBe("#/runs/01M6EEEEEEEEEEEEEEEEEEEEEE/2"));
+  // A run opens.
+  await userEvent.click(runs[2]);
+  await waitFor(() => expect(window.location.hash).toBe("#/runs/01M6EEEEEEEEEEEEEEEEEEEEEE"));
 });
 
 test("a pipeline: its steps as a graph, all its runs, starting one; a tab each", async () => {
   const { calls } = show("#/pipelines/daily");
   const graph = await screen.findByRole("list", { name: "steps graph" });
-  expect(within(graph).getAllByRole("listitem").map((n) => n.textContent)).toEqual(["extractraw.orders", "build", "report"]);
+  expect(within(graph).getAllByRole("listitem").map((n) => n.textContent)).toEqual(["extractraw.orders", "buildmart.revenue", "report"]);
   expect(within(graph).getByTitle("writes raw.orders")).toHaveTextContent("raw.orders");
   const tabs = screen.getByRole("tablist", { name: "pipeline" });
   expect(within(tabs).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Overview", "Runs", "Workers", "Start a run"]);
@@ -260,7 +265,7 @@ test("a run: steps on a timeline, children, events, signal and cancel", async ()
   expect(screen.getByText(/on its schedule/)).toBeInTheDocument();
   const graph = screen.getByRole("list", { name: "steps graph" });
   const nodes = within(graph).getAllByRole("listitem").map((n) => n.textContent);
-  expect(nodes.slice(0, 2)).toEqual(["extractcompleted2.5 sraw.orders", "buildreused0 ms"]);
+  expect(nodes.slice(0, 2)).toEqual(["extractcompleted2.5 sraw.orders", "buildreused0 msmart.revenue"]);
   expect(within(graph).getAllByRole("listitem").map((n) => n.className)).toEqual([
     "dag-node node-completed clickable", "dag-node node-reused clickable", "dag-node node-running clickable",
   ]);
@@ -314,7 +319,7 @@ test("a run: steps on a timeline, children, events, signal and cancel", async ()
 
 test("a finished run shows its result", async () => {
   show("#/runs/01M6DDDDDDDDDDDDDDDDDDDDDD");
-  expect(await screen.findByText("Result")).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { name: /Output/ })).toBeInTheDocument();
   expect(screen.getByText("total").nextElementSibling).toHaveTextContent("775.99");
   expect(screen.getByText(/took 4.0 s · 3 steps · all reused/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
@@ -393,4 +398,31 @@ test("pipeline tabs have their own URLs; the overview's is the pipeline's", () =
   expect(parse("#/pipelines/daily/nope")).toEqual({ name: "pipeline", run: "daily" });
   expect(href({ name: "pipeline", run: "daily", tab: "runs" })).toBe("#/pipelines/daily/runs");
   expect(href({ name: "pipeline", run: "daily", tab: "overview" })).toBe("#/pipelines/daily");
+});
+
+test("the sidebar moves between pages; the palette (⌘K) finds a pipeline or run", async () => {
+  show("#/runs");
+  const nav = screen.getByRole("navigation", { name: "main" });
+  expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Pipelines", "Runs", "Workers"]);
+  expect(within(nav).getByRole("link", { name: "Pipelines" })).toHaveClass("active");
+  await userEvent.click(within(nav).getByRole("link", { name: "Runs" }));
+  await waitFor(() => expect(window.location.hash).toBe("#/activity"));
+  expect(await screen.findByRole("heading", { name: "Runs" })).toBeInTheDocument();
+  expect(await screen.findByText("hourly")).toBeInTheDocument(); // every pipeline's runs
+
+  await userEvent.keyboard("{Meta>}k{/Meta}");
+  const dialog = await screen.findByRole("dialog", { name: "search" });
+  await userEvent.type(within(dialog).getByRole("combobox", { name: "search pipelines and runs" }), "daily 10-23");
+  await waitFor(() => expect(within(dialog).getAllByRole("option")).toHaveLength(1));
+  expect(within(dialog).getByRole("option", { selected: true })).toHaveTextContent("Daily revenue · day 2026-10-23completed");
+  await userEvent.keyboard("{Enter}");
+  await waitFor(() => expect(window.location.hash).toBe("#/runs/01M6DDDDDDDDDDDDDDDDDDDDDD"));
+  expect(screen.queryByRole("dialog", { name: "search" })).not.toBeInTheDocument();
+
+  await userEvent.keyboard("{Control>}k{/Control}");
+  const again = await screen.findByRole("dialog", { name: "search" });
+  await userEvent.type(within(again).getByRole("combobox"), "work");
+  expect(within(again).getAllByRole("option").map((o) => o.textContent)).toEqual(["Workers"]);
+  await userEvent.keyboard("{Escape}");
+  expect(screen.queryByRole("dialog", { name: "search" })).not.toBeInTheDocument();
 });

@@ -260,6 +260,16 @@ each is one PR:
    (fan-outs folded), each square opening the run on that step.
    `ListRuns` can return each run's steps (`with_steps`). The revenue
    example gets a scheduled pipeline (`nightly`, 03:00 Berlin).
+   ✅ **A look of its own**, added to this step: dark first (a light
+   theme when the system asks), a sidebar (Pipelines, Runs, Workers) with
+   breadcrumbs, and ⌘K to jump to any pipeline or recent run. Statuses
+   are dots, names and IDs monospace. Runs are told by their data: the
+   start page has a stats strip and each pipeline's run times as bars; a
+   pipeline's recent runs are a feed of the datasets each wrote and
+   reused (instead of the grid of squares), with failed and running
+   steps; a run's page leads with its output and data versions, then the
+   graph, its steps, logs as a terminal and what happened as a timeline.
+   `with_steps` steps now carry their dataset.
    ✅ **Plain words**, added to this step: a run's page tells what
    happened in sentences instead of raw events ("extract_orders done in
    0.8 s, wrote a new version of raw.orders for 2026-10-28", "reused the

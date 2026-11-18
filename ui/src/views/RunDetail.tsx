@@ -2,11 +2,13 @@ import { useState, type FormEvent } from "react";
 
 import { useApi } from "../api";
 import type { Run, Step } from "../gen/moksha/v1/run_pb";
-import { ago, duration, stepStatus, ms, pretty, shortId, Status, steps, took, trigger, Values, when } from "../format";
+import { ago, duration, inputsText, stepStatus, ms, pretty, shortId, Status, steps, took, trigger, Values, when } from "../format";
 import { message, usePoll } from "../hooks";
 import { usePipelines } from "../pipelines";
 import { Link } from "../router";
 import { Hint } from "../words";
+import { Icon } from "../icons";
+import { Crumbs } from "./Crumbs";
 import { Dag } from "./Dag";
 import { History } from "./History";
 import { Logs } from "./Logs";
@@ -49,17 +51,31 @@ export function RunDetail({ id, step }: { id: string; step?: number }) {
 
   return (
     <section>
-      <p>
-        <Link to={{ name: "pipeline", run: h.name }}>← {pipelines.title(h.name)}</Link>
-      </p>
-      <div className="toolbar">
+      <Crumbs
+        items={[
+          { label: "Pipelines", to: { name: "runs" } },
+          { label: pipelines.title(h.name), to: { name: "pipeline", run: h.name } },
+          { label: inputsText(h) },
+        ]}
+      />
+      <div className="page-head">
         <h1>{pipelines.title(h.name)}</h1>
         <Values json={h.paramsJson} />
         <Status status={h.status} />
-        {open && <button onClick={() => act(() => api.runs.cancelRun({ runId: h.id, by: "the web UI" }))}>Cancel</button>}
-        {h.status === "stuck" && <button onClick={() => act(() => api.runs.resumeRun({ runId: h.id }))}>Resume</button>}
+        <span className="page-actions">
+          {open && (
+            <button className="danger" onClick={() => act(() => api.runs.cancelRun({ runId: h.id, by: "the web UI" }))}>
+              Cancel
+            </button>
+          )}
+          {h.status === "stuck" && (
+            <button className="primary" onClick={() => act(() => api.runs.resumeRun({ runId: h.id }))}>
+              Resume
+            </button>
+          )}
+        </span>
       </div>
-      <p className="dim">
+      <p className="run-meta">
         started <span title={when(h.createdAt)}>{ago(h.createdAt, now)}</span>
         {h.trigger && <> {trigger(h.trigger)}</>}
         {t !== undefined && <> · {h.finishedAt ? "took" : "running for"} {duration(t)}</>} · {steps(h)}
@@ -95,10 +111,15 @@ export function RunDetail({ id, step }: { id: string; step?: number }) {
         </p>
       )}
 
-      {h.resultJson && (
+      {(h.resultJson || h.steps.some((l) => l.dataVersion)) && (
         <>
-          <h2>Result</h2>
-          <Result json={h.resultJson} />
+          <h2>
+            Output <Hint word="version" />
+          </h2>
+          <div className="output">
+            {h.resultJson && <Result json={h.resultJson} />}
+            <DataVersions steps={h.steps} />
+          </div>
         </>
       )}
       {open && <SignalForm onSend={(name, payload) => act(() => api.runs.signalRun({ runId: h.id, name, payloadJson: payload }))} />}
@@ -134,6 +155,27 @@ export function RunDetail({ id, step }: { id: string; step?: number }) {
       <History runId={h.id} open={open} onSelect={pick} />
       <p className="dim mono small">run {h.id}</p>
     </section>
+  );
+}
+
+// DataVersions lists the data versions a run's steps wrote or reused.
+function DataVersions({ steps }: { steps: Step[] }) {
+  const out = steps.filter((l) => l.dataVersion);
+  if (out.length === 0) return null;
+  return (
+    <ul className="versions" aria-label="data versions">
+      {out.map((l) => (
+        <li key={l.seq} className={l.reused ? "reused" : "wrote"}>
+          <Icon name={l.reused ? "reused" : "dataset"} size={14} />
+          <span className="mono">{l.dataset || l.name}</span>
+          <span className="dim">{l.reused ? "reused" : "new version"}</span>
+          <span className="mono dim" title={`version ${l.dataVersion}`}>
+            {shortId(l.dataVersion)}
+          </span>
+          <span className="dim small">by {l.name}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

@@ -232,6 +232,23 @@ func TestRunRunsEndToEndOverTheAPI(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, state.RunCompleted, h.Status)
 	assert.JSONEq(t, `{"data_version":"`+mart.ID+`"}`, string(h.Result))
+
+	// Listed with their steps: what each run wrote and reused.
+	mux := http.NewServeMux()
+	path, rh := NewRunHandler(s.core, s.store)
+	mux.Handle(path, rh)
+	runs := mokshav1connect.NewRunServiceClient(http.DefaultClient, httptestServer(t, mux))
+	list, err := runs.ListRuns(ctx, connect.NewRequest(&mokshav1.ListRunsRequest{Name: "daily_revenue", WithSteps: true}))
+	require.NoError(t, err)
+	require.Len(t, list.Msg.Runs, 2)
+	var wrote []string
+	for _, r := range list.Msg.Runs { // newest first: the second run reused both
+		for _, l := range r.Steps {
+			wrote = append(wrote, fmt.Sprintf("%s %s reused=%v", l.Name, l.Dataset, l.Reused))
+		}
+	}
+	assert.Equal(t, []string{"extract raw.orders reused=true", "build mart.revenue reused=true",
+		"extract raw.orders reused=false", "build mart.revenue reused=false"}, wrote)
 }
 
 func TestPollWaitsAndReturnsNothing(t *testing.T) {
