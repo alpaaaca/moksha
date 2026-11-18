@@ -1,5 +1,6 @@
 import type { Step } from "../gen/moksha/v1/run_pb";
 import { duration, stepStatus, Status, took } from "../format";
+import { Icon } from "../icons";
 
 const W = 220; // node width
 const H = 84; // node height
@@ -50,35 +51,6 @@ function groupStatus(steps: Step[]): string {
   const ss = steps.map(stepStatus);
   for (const s of ["failed", "cancelled", "retrying", "running", "waiting"]) if (ss.includes(s)) return s;
   return ss.every((s) => s === "reused") ? "reused" : "completed";
-}
-
-// Icons, 16 units square, drawn in the current color.
-const ICONS: Record<string, string> = {
-  completed: "M3.5 8.5l3 3 6-7",
-  failed: "M4.5 4.5l7 7M11.5 4.5l-7 7",
-  cancelled: "M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11M4.2 11.8l7.6-7.6",
-  retrying: "M13 8a5 5 0 1 1-1.6-3.7M13 2.8v3h-3",
-  reused: "M3 8a5 5 0 1 0 1.6-3.7M3 2.8v3h3",
-  waiting: "M8 2.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11M8 5v3.2l2.2 1.4",
-  step: "M8 1.8l5.5 3.1v6.2L8 14.2l-5.5-3.1V4.9zM2.5 4.9L8 8l5.5-3.1M8 8v6.2",
-  dataset:
-    "M2.5 4c0-1.1 2.5-2 5.5-2s5.5.9 5.5 2v8c0 1.1-2.5 2-5.5 2s-5.5-.9-5.5-2zM2.5 4c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2M2.5 8c0 1.1 2.5 2 5.5 2s5.5-.9 5.5-2",
-};
-
-function Icon({ name, size = 16 }: { name: string; size?: number }) {
-  if (name === "running") {
-    return (
-      <svg className="dag-spin" width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
-        <path d="M8 2.5a5.5 5.5 0 0 1 5.5 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
-    );
-  }
-  return (
-    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-      <path d={ICONS[name] ?? ICONS.step} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
 }
 
 // Dag draws a run's steps as cards in columns on a canvas, with curves from

@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 
 import { useApi } from "../api";
 import type { Run } from "../gen/moksha/v1/run_pb";
-import { ago, duration, fromNow, RUN_STATUSES, Status, steps, took, Values, when } from "../format";
+import { ago, duration, fromNow, ms, RUN_STATUSES, Status, steps, took, Values, when } from "../format";
 import { message, usePoll } from "../hooks";
 import { usePipelines, type Pipelines } from "../pipelines";
 import { Link, navigate } from "../router";
@@ -23,9 +23,38 @@ export function RunList() {
   for (const h of overview.data?.runs ?? []) byName.set(h.name, [...(byName.get(h.name) ?? []), h]); // newest first
   const names = [...byName.keys()].sort((a, b) => pipelines.title(a).localeCompare(pipelines.title(b)));
 
+  const runs = overview.data?.runs ?? [];
+  const day = Date.now() - 86400000;
+  const today = runs.filter((h) => (ms(h.createdAt) ?? 0) >= day);
+
   return (
     <section>
-      <h1>Pipelines</h1>
+      <div className="page-head">
+        <h1>Pipelines</h1>
+      </div>
+      <p className="lede">Your code's pipelines, how they start, and how their runs went.</p>
+      {overview.data && (
+        <dl className="stats">
+          <div>
+            <dt>pipelines</dt>
+            <dd>{names.length}</dd>
+          </div>
+          <div>
+            <dt>runs, last 24 h</dt>
+            <dd>{today.length}</dd>
+          </div>
+          <div>
+            <dt>running now</dt>
+            <dd className={runs.some((h) => h.status === "running") ? "run" : ""}>{runs.filter((h) => h.status === "running").length}</dd>
+          </div>
+          <div>
+            <dt>failed, last 24 h</dt>
+            <dd className={today.some((h) => h.status === "failed" || h.status === "stuck") ? "bad" : ""}>
+              {today.filter((h) => h.status === "failed" || h.status === "stuck").length}
+            </dd>
+          </div>
+        </dl>
+      )}
       {overview.error && <p className="error">{overview.error}</p>}
       {overview.data && names.length === 0 && (
         <p className="dim">No pipelines yet: start workers with your code (moksha dev does, from moksha.yaml).</p>
@@ -71,6 +100,8 @@ function PipelineRow({ name, runs, pipelines }: { name: string; runs: Run[]; pip
   const sub = pipelines.subscription(name);
   const s = runs.length ? summary(runs) : undefined;
   const finished = runs.filter((h) => h.finishedAt);
+  const recent = [...runs.slice(0, RECENT)].reverse();
+  const longest = Math.max(...recent.map((h) => took(h.createdAt, h.finishedAt) ?? 0), 1);
   const ok = finished.filter((h) => h.status === "completed" || h.status === "continued").length;
   return (
     <tr className="clickable" onClick={() => navigate({ name: "pipeline", run: name })}>
@@ -100,9 +131,9 @@ function PipelineRow({ name, runs, pipelines }: { name: string; runs: Run[]; pip
       <td title={schedule ? when(schedule.nextRun) : undefined}>{schedule ? fromNow(schedule.nextRun) : <span className="dim">–</span>}</td>
       <td>
         <span className="recent" aria-label={`recent runs of ${pipelines.title(name)}`}>
-          {[...runs.slice(0, RECENT)].reverse().map((h) => (
+          {recent.map((h) => (
             <Link key={h.id} to={{ name: "run", id: h.id }} className={`recent-run run-${h.status}`} label={`${h.status}, started ${ago(h.createdAt)}`} onClick={(e) => e.stopPropagation()}>
-              {""}
+              <span style={{ height: `${Math.max(((took(h.createdAt, h.finishedAt) ?? 0) / longest) * 100, 18)}%` }} />
             </Link>
           ))}
           {runs.length === 0 && <span className="dim">never ran</span>}
@@ -111,7 +142,10 @@ function PipelineRow({ name, runs, pipelines }: { name: string; runs: Run[]; pip
       <td>
         {s && (
           <>
-            <Status status={s.last.status} /> <span title={when(s.last.createdAt)}>{ago(s.last.createdAt)}</span>
+            <Status status={s.last.status} />
+            <div className="dim small" title={when(s.last.createdAt)}>
+              {ago(s.last.createdAt)}
+            </div>
           </>
         )}
       </td>

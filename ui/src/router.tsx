@@ -1,4 +1,5 @@
 // A hash router: #/runs (the pipelines), #/pipelines/<run name>[/<tab>],
+// #/activity (all runs), #/workers,
 // #/runs/<id> (one run), #/runs/<id>/<seq> (one run, one step's logs). Hash routes need nothing from the
 // server, which serves index.html for every path anyway.
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
@@ -9,12 +10,16 @@ export type PipelineTab = (typeof PIPELINE_TABS)[number];
 
 export type Route =
   | { name: "runs" }
+  | { name: "activity" }
+  | { name: "workers" }
   | { name: "pipeline"; run: string; tab?: PipelineTab }
   | { name: "run"; id: string; step?: number };
 
 export function parse(hash: string): Route {
   const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
   if (parts[0] === "runs" && parts[1]) return { name: "run", id: parts[1], step: Number(parts[2]) || undefined };
+  if (parts[0] === "activity") return { name: "activity" };
+  if (parts[0] === "workers") return { name: "workers" };
   if (parts[0] === "pipelines" && parts[1]) {
     const tab = PIPELINE_TABS.find((t) => t === parts[2]);
     return tab && tab !== "overview" ? { name: "pipeline", run: parts[1], tab } : { name: "pipeline", run: parts[1] };
@@ -28,6 +33,9 @@ export function href(r: Route): string {
       return `#/runs/${encodeURIComponent(r.id)}` + (r.step ? `/${r.step}` : "");
     case "pipeline":
       return `#/pipelines/${encodeURIComponent(r.run)}` + (r.tab && r.tab !== "overview" ? `/${r.tab}` : "");
+    case "activity":
+    case "workers":
+      return `#/${r.name}`;
     default:
       return "#/runs";
   }

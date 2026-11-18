@@ -1226,8 +1226,8 @@ type ListRunsRequest struct {
 	ParentId string `protobuf:"bytes,5,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
 	// Only runs older than this one (paging).
 	BeforeId string `protobuf:"bytes,6,opt,name=before_id,json=beforeId,proto3" json:"before_id,omitempty"`
-	// Also return each run's steps (name, status, reused, times; no results
-	// or edges): a run history by step. At most 200 runs then.
+	// Also return each run's steps (name, status, reused, times, dataset; no
+	// results or edges): what each run wrote and reused. At most 200 runs then.
 	WithSteps     bool `protobuf:"varint,7,opt,name=with_steps,json=withSteps,proto3" json:"with_steps,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -9,7 +9,8 @@ import { Link, type PipelineTab } from "../router";
 import { Hint } from "../words";
 import { Dag } from "./Dag";
 import { PipelineWorkers } from "./PipelineWorkers";
-import { RunHistory } from "./RunHistory";
+import { Crumbs } from "./Crumbs";
+import { RunFeed } from "./RunFeed";
 import { RunsTable, StartRun, StatusFilter, summary } from "./RunList";
 
 const HISTORY = 30;
@@ -22,7 +23,7 @@ const TABS: { tab: PipelineTab; label: string }[] = [
 ];
 
 // Pipeline: one pipeline (a run by name): what it is and how it is started,
-// then a tab each for its recent runs by step and its steps as a graph
+// then a tab each for its recent runs and what they wrote, its steps as a graph
 // (Overview), all its runs, the workers that worked on it, and starting a
 // run. Each tab asks only for what it shows, and has its own URL.
 export function Pipeline({ run, tab }: { run: string; tab: PipelineTab }) {
@@ -38,14 +39,12 @@ export function Pipeline({ run, tab }: { run: string; tab: PipelineTab }) {
 
   return (
     <section>
-      <p>
-        <Link to={{ name: "runs" }}>← all pipelines</Link>
-      </p>
-      <div className="toolbar">
+      <Crumbs items={[{ label: "Pipelines", to: { name: "runs" } }, { label: pipelines.title(run) }]} />
+      <div className="page-head">
         <h1>{pipelines.title(run)}</h1>
         {s && <Status status={s.last.status} />}
       </div>
-      {info?.description && <p className="desc">{info.description}</p>}
+      {info?.description && <p className="lede">{info.description}</p>}
       <dl className="facts meta">
         <dt>in code</dt>
         <dd className="mono">{run}</dd>
@@ -114,7 +113,7 @@ export function Pipeline({ run, tab }: { run: string; tab: PipelineTab }) {
   );
 }
 
-// Overview: the recent runs by step, and the steps as a graph (from the
+// Overview: the recent runs and what each wrote, and the steps as a graph (from the
 // newest run: pipeline code decides its steps as it runs).
 function Overview({ run, latest, loaded, now }: { run: string; latest?: Run; loaded: boolean; now: number }) {
   const api = useApi();
@@ -123,9 +122,11 @@ function Overview({ run, latest, loaded, now }: { run: string; latest?: Run; loa
   const steps = graph.data?.run?.steps ?? [];
   return (
     <>
-      <h2>Recent runs</h2>
+      <h2>
+        Recent runs <Hint word="run" />
+      </h2>
       {history.data && history.data.runs.length > 0 ? (
-        <RunHistory runs={history.data.runs} now={now} />
+        <RunFeed runs={history.data.runs} now={now} />
       ) : (
         <p className="dim">{history.data ? "no runs yet" : "loading…"}</p>
       )}

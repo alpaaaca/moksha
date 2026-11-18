@@ -646,8 +646,8 @@ export type ListRunsRequest = Message<"moksha.v1.ListRunsRequest"> & {
   beforeId: string;
 
   /**
-   * Also return each run's steps (name, status, reused, times; no results
-   * or edges): a run history by step. At most 200 runs then.
+   * Also return each run's steps (name, status, reused, times, dataset; no
+   * results or edges): what each run wrote and reused. At most 200 runs then.
    *
    * @generated from field: bool with_steps = 7;
    */

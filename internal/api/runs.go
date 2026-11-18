@@ -110,7 +110,7 @@ func (s *RunServer) ListRuns(ctx context.Context, req *connect.Request[mokshav1.
 		hm.StepCounts = stepCountsMessage(counts[h.ID])
 		for _, l := range steps[h.ID] {
 			lm := &mokshav1.Step{Seq: int32(l.Seq), Name: l.Name, Status: l.Status, Reused: l.Reused,
-				Attempts: int32(l.Attempts), ScheduledAt: timestamppb.New(l.ScheduledAt)}
+				Attempts: int32(l.Attempts), ScheduledAt: timestamppb.New(l.ScheduledAt), Dataset: outputDataset(l.Output)}
 			if l.FinishedAt != nil {
 				lm.FinishedAt = timestamppb.New(*l.FinishedAt)
 			}
@@ -279,18 +279,14 @@ func (s *RunServer) GetRun(ctx context.Context, req *connect.Request[mokshav1.Ge
 		var inputs []struct {
 			DataVersion string `json:"data_version"`
 		}
-		var output struct {
-			Dataset string `json:"dataset"`
-		}
 		_ = json.Unmarshal(l.Inputs, &inputs) // encoded by the core; nil when it has none
-		_ = json.Unmarshal(l.Output, &output)
 		for _, in := range inputs {
 			if seq, ok := producedBy[in.DataVersion]; ok && seq != m.Seq && !slices.Contains(m.After, seq) {
 				m.After = append(m.After, seq)
 			}
 		}
 		slices.Sort(m.After)
-		m.Dataset = output.Dataset
+		m.Dataset = outputDataset(l.Output)
 		if l.Status == state.StepCompleted && !f.Reused && l.RunReason == core.ReasonNoReuse {
 			rep, err := s.store.StepRepeats(ctx, h.Tenant, l, f.DataVersion)
 			if err != nil {
@@ -399,4 +395,14 @@ func (s *RunServer) PlanRuns(ctx context.Context, req *connect.Request[mokshav1.
 		out.Plans = append(out.Plans, rp)
 	}
 	return connect.NewResponse(out), nil
+}
+
+// outputDataset is the dataset a step writes, from its output as the core
+// encodes it; empty if it writes none.
+func outputDataset(output json.RawMessage) string {
+	var o struct {
+		Dataset string `json:"dataset"`
+	}
+	_ = json.Unmarshal(output, &o) // nil when it writes none
+	return o.Dataset
 }
