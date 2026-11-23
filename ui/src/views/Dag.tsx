@@ -1,5 +1,5 @@
 import type { Step } from "../gen/moksha/v1/run_pb";
-import { duration, stepStatus, Status, took } from "../format";
+import { checkpointed, clock, duration, stepStatus, Status, took } from "../format";
 import { Icon } from "../icons";
 
 const W = 220; // node width
@@ -138,6 +138,7 @@ export function Dag({
                   </div>
                 )}
               </div>
+              {!plain && <Saved steps={n.steps} />}
               {n.steps.length > 1 && (
                 <span className="dag-count" title={`${n.steps.length} steps of this name`}>
                   ×{n.steps.length}
@@ -148,5 +149,23 @@ export function Dag({
         })}
       </div>
     </div>
+  );
+}
+
+// Saved marks a node whose steps are checkpointed: how they ended is in the
+// run's event log, so they won't run again in this run. A fan-out says how
+// many of its steps are.
+function Saved({ steps }: { steps: Step[] }) {
+  const saved = steps.filter(checkpointed);
+  if (saved.length === 0) return null;
+  const all = saved.length === steps.length;
+  const title =
+    steps.length === 1
+      ? `checkpointed at ${clock(steps[0].finishedAt)} UTC: saved in the run's event log, it won't run again in this run`
+      : `${saved.length} of ${steps.length} checkpointed: saved in the run's event log, they won't run again in this run`;
+  return (
+    <span className={`dag-saved${all ? "" : " partial"}`} title={title} aria-label={title}>
+      <Icon name="saved" size={12} />
+    </span>
   );
 }

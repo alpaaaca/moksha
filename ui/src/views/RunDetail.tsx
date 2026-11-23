@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 
 import { useApi } from "../api";
 import type { Run, Step } from "../gen/moksha/v1/run_pb";
-import { ago, duration, inputsText, stepStatus, ms, pretty, shortId, Status, steps, took, trigger, Values, when } from "../format";
+import { ago, checkpointed, clock, duration, inputsText, stepStatus, ms, pretty, shortId, Status, steps, took, trigger, unsaved, Values, when } from "../format";
 import { message, usePoll } from "../hooks";
 import { usePipelines } from "../pipelines";
 import { Link } from "../router";
@@ -53,7 +53,7 @@ export function RunDetail({ id, step }: { id: string; step?: number }) {
     <section>
       <Crumbs
         items={[
-          { label: "Pipelines", to: { name: "runs" } },
+          ...pipelines.trail(h.name),
           { label: pipelines.title(h.name), to: { name: "pipeline", run: h.name } },
           { label: inputsText(h) },
         ]}
@@ -131,6 +131,7 @@ export function RunDetail({ id, step }: { id: string; step?: number }) {
         <p className="dim">none yet</p>
       ) : (
         <>
+          <Durability run={h} open={open} />
           <Dag steps={h.steps} now={now} selected={selected} onSelect={pick} />
           <Steps run={h} now={now} selected={selected} onSelect={pick} />
           <div id="logs">
@@ -155,6 +156,36 @@ export function RunDetail({ id, step }: { id: string; step?: number }) {
       <History runId={h.id} open={open} onSelect={pick} />
       <p className="dim mono small">run {h.id}</p>
     </section>
+  );
+}
+
+// Durability says how much of a run is checkpointed: which steps have
+// ended and are saved in its event log, so a restart won't run them again.
+function Durability({ run: h, open }: { run: Run; open: boolean }) {
+  const saved = h.steps.filter(checkpointed).length;
+  const total = h.steps.length;
+  return (
+    <div className="durability" role="status" aria-label="durability">
+      <Icon name="saved" />
+      <strong>
+        {saved} of {total} {total === 1 ? "step" : "steps"} checkpointed
+      </strong>
+      <Hint word="checkpoint" />
+      <span className="durability-bar" aria-hidden="true">
+        {h.steps.map((l) => (
+          <i key={l.seq} className={checkpointed(l) ? "saved" : stepStatus(l)} />
+        ))}
+      </span>
+      <span className="dim">
+        {!open
+          ? "How each step ended is saved in the run's event log."
+          : saved === total
+            ? "If the server or a worker stops now, the run picks up from here and none of its steps runs again."
+            : saved === 0
+              ? "Nothing saved yet: if the server or a worker stops now, its steps run from the start."
+              : "If the server or a worker stops now, these stay done and the run picks up from here; the others run again."}
+      </span>
+    </div>
   );
 }
 
@@ -221,6 +252,9 @@ function Steps({ run, now, selected, onSelect }: { run: Run; now: number; select
             timeline <span className="dim">({duration(span)})</span>
           </th>
           <th>took</th>
+          <th>
+            checkpoint <Hint word="checkpoint" />
+          </th>
           <th>why</th>
           <th>
             output <Hint word="version" />
@@ -262,6 +296,16 @@ function Step({ step: l, start, span, now, selected, onSelect }: { step: Step; s
         </div>
       </td>
       <td>{t === undefined ? "–" : duration(t)}</td>
+      <td className="checkpoint">
+        {checkpointed(l) ? (
+          <span className="saved" title={`saved in the run's event log at ${when(l.finishedAt)}: it won't run again in this run`}>
+            <Icon name="saved" size={13} />
+            saved <span className="mono dim">{clock(l.finishedAt, 1)}</span>
+          </span>
+        ) : (
+          <span className="dim small">{unsaved(l)}</span>
+        )}
+      </td>
       <td className="dim">
         {l.why}
         {l.attempts > 1 && <div>{l.attempts} attempts</div>}

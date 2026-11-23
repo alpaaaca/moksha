@@ -1157,8 +1157,15 @@ type Pipeline struct {
 	// The run's name in code.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Empty if its code gives none.
-	Title         string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	Title       string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// It is a loop, a pipeline that runs until it is stopped: the newest build
+	// that defines it says so, or a run of it continued as new since that
+	// build registered (builds of older SDKs don't say).
+	Loops bool `protobuf:"varint,4,opt,name=loops,proto3" json:"loops,omitempty"`
+	// Its group ("shop"), as the newest build that defines it says: the
+	// Pipelines page lists pipelines of one group under it. Empty: none.
+	Group         string `protobuf:"bytes,5,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1214,6 +1221,20 @@ func (x *Pipeline) GetDescription() string {
 	return ""
 }
 
+func (x *Pipeline) GetLoops() bool {
+	if x != nil {
+		return x.Loops
+	}
+	return false
+}
+
+func (x *Pipeline) GetGroup() string {
+	if x != nil {
+		return x.Group
+	}
+	return ""
+}
+
 type ListRunsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Empty: any.
@@ -1228,7 +1249,10 @@ type ListRunsRequest struct {
 	BeforeId string `protobuf:"bytes,6,opt,name=before_id,json=beforeId,proto3" json:"before_id,omitempty"`
 	// Also return each run's steps (name, status, reused, times, dataset; no
 	// results or edges): what each run wrote and reused. At most 200 runs then.
-	WithSteps     bool `protobuf:"varint,7,opt,name=with_steps,json=withSteps,proto3" json:"with_steps,omitempty"`
+	WithSteps bool `protobuf:"varint,7,opt,name=with_steps,json=withSteps,proto3" json:"with_steps,omitempty"`
+	// pipeline: only runs of pipelines that end; loop: only runs of loops
+	// (Pipeline.loops). Empty: both.
+	Kind          string `protobuf:"bytes,8,opt,name=kind,proto3" json:"kind,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1310,6 +1334,13 @@ func (x *ListRunsRequest) GetWithSteps() bool {
 		return x.WithSteps
 	}
 	return false
+}
+
+func (x *ListRunsRequest) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
 }
 
 type CancelRunRequest struct {
@@ -2551,7 +2582,10 @@ type Run struct {
 	StepCounts *StepCounts `protobuf:"bytes,15,opt,name=step_counts,json=stepCounts,proto3" json:"step_counts,omitempty"`
 	// A run in progress with work queued that no worker took yet: why
 	// (GetRun and ListRuns, from the leader's memory).
-	Waiting       *Waiting `protobuf:"bytes,16,opt,name=waiting,proto3" json:"waiting,omitempty"`
+	Waiting *Waiting `protobuf:"bytes,16,opt,name=waiting,proto3" json:"waiting,omitempty"`
+	// A run in progress: the signals it waits for, in the order it asked
+	// (GetRun and ListRuns, from the leader's memory).
+	SignalWaits   []*SignalWait `protobuf:"bytes,17,rep,name=signal_waits,json=signalWaits,proto3" json:"signal_waits,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2698,6 +2732,75 @@ func (x *Run) GetWaiting() *Waiting {
 	return nil
 }
 
+func (x *Run) GetSignalWaits() []*SignalWait {
+	if x != nil {
+		return x.SignalWaits
+	}
+	return nil
+}
+
+// SignalWait is one wait_signal nothing answered yet.
+type SignalWait struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Seq   int32                  `protobuf:"varint,1,opt,name=seq,proto3" json:"seq,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// Unset: it waits for as long as it takes.
+	TimesOutAt    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=times_out_at,json=timesOutAt,proto3" json:"times_out_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignalWait) Reset() {
+	*x = SignalWait{}
+	mi := &file_moksha_v1_run_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignalWait) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignalWait) ProtoMessage() {}
+
+func (x *SignalWait) ProtoReflect() protoreflect.Message {
+	mi := &file_moksha_v1_run_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignalWait.ProtoReflect.Descriptor instead.
+func (*SignalWait) Descriptor() ([]byte, []int) {
+	return file_moksha_v1_run_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *SignalWait) GetSeq() int32 {
+	if x != nil {
+		return x.Seq
+	}
+	return 0
+}
+
+func (x *SignalWait) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SignalWait) GetTimesOutAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.TimesOutAt
+	}
+	return nil
+}
+
 // Waiting is a run's queued work and why no worker runs it yet.
 type Waiting struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -2727,7 +2830,7 @@ type Waiting struct {
 
 func (x *Waiting) Reset() {
 	*x = Waiting{}
-	mi := &file_moksha_v1_run_proto_msgTypes[42]
+	mi := &file_moksha_v1_run_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2739,7 +2842,7 @@ func (x *Waiting) String() string {
 func (*Waiting) ProtoMessage() {}
 
 func (x *Waiting) ProtoReflect() protoreflect.Message {
-	mi := &file_moksha_v1_run_proto_msgTypes[42]
+	mi := &file_moksha_v1_run_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2752,7 +2855,7 @@ func (x *Waiting) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Waiting.ProtoReflect.Descriptor instead.
 func (*Waiting) Descriptor() ([]byte, []int) {
-	return file_moksha_v1_run_proto_rawDescGZIP(), []int{42}
+	return file_moksha_v1_run_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *Waiting) GetReason() string {
@@ -2839,7 +2942,7 @@ type StepCounts struct {
 
 func (x *StepCounts) Reset() {
 	*x = StepCounts{}
-	mi := &file_moksha_v1_run_proto_msgTypes[43]
+	mi := &file_moksha_v1_run_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2851,7 +2954,7 @@ func (x *StepCounts) String() string {
 func (*StepCounts) ProtoMessage() {}
 
 func (x *StepCounts) ProtoReflect() protoreflect.Message {
-	mi := &file_moksha_v1_run_proto_msgTypes[43]
+	mi := &file_moksha_v1_run_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2864,7 +2967,7 @@ func (x *StepCounts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StepCounts.ProtoReflect.Descriptor instead.
 func (*StepCounts) Descriptor() ([]byte, []int) {
-	return file_moksha_v1_run_proto_rawDescGZIP(), []int{43}
+	return file_moksha_v1_run_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *StepCounts) GetTotal() int32 {
@@ -2942,7 +3045,7 @@ type Step struct {
 
 func (x *Step) Reset() {
 	*x = Step{}
-	mi := &file_moksha_v1_run_proto_msgTypes[44]
+	mi := &file_moksha_v1_run_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2954,7 +3057,7 @@ func (x *Step) String() string {
 func (*Step) ProtoMessage() {}
 
 func (x *Step) ProtoReflect() protoreflect.Message {
-	mi := &file_moksha_v1_run_proto_msgTypes[44]
+	mi := &file_moksha_v1_run_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2967,7 +3070,7 @@ func (x *Step) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Step.ProtoReflect.Descriptor instead.
 func (*Step) Descriptor() ([]byte, []int) {
-	return file_moksha_v1_run_proto_rawDescGZIP(), []int{44}
+	return file_moksha_v1_run_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *Step) GetSeq() int32 {
@@ -3167,11 +3270,13 @@ const file_moksha_v1_run_proto_rawDesc = "" +
 	"\alast_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\x06lastAt\"\x16\n" +
 	"\x14ListPipelinesRequest\"J\n" +
 	"\x15ListPipelinesResponse\x121\n" +
-	"\tpipelines\x18\x01 \x03(\v2\x13.moksha.v1.PipelineR\tpipelines\"V\n" +
+	"\tpipelines\x18\x01 \x03(\v2\x13.moksha.v1.PipelineR\tpipelines\"\x82\x01\n" +
 	"\bPipeline\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"\xc8\x01\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x14\n" +
+	"\x05loops\x18\x04 \x01(\bR\x05loops\x12\x14\n" +
+	"\x05group\x18\x05 \x01(\tR\x05group\"\xdc\x01\n" +
 	"\x0fListRunsRequest\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
@@ -3180,7 +3285,8 @@ const file_moksha_v1_run_proto_rawDesc = "" +
 	"\tparent_id\x18\x05 \x01(\tR\bparentId\x12\x1b\n" +
 	"\tbefore_id\x18\x06 \x01(\tR\bbeforeId\x12\x1d\n" +
 	"\n" +
-	"with_steps\x18\a \x01(\bR\twithSteps\"9\n" +
+	"with_steps\x18\a \x01(\bR\twithSteps\x12\x12\n" +
+	"\x04kind\x18\b \x01(\tR\x04kind\"9\n" +
 	"\x10CancelRunRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x0e\n" +
 	"\x02by\x18\x02 \x01(\tR\x02by\"\x13\n" +
@@ -3258,7 +3364,7 @@ const file_moksha_v1_run_proto_rawDesc = "" +
 	"\rGetRunRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\"2\n" +
 	"\x0eGetRunResponse\x12 \n" +
-	"\x03run\x18\x01 \x01(\v2\x0e.moksha.v1.RunR\x03run\"\xac\x04\n" +
+	"\x03run\x18\x01 \x01(\v2\x0e.moksha.v1.RunR\x03run\"\xe6\x04\n" +
 	"\x03Run\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06tenant\x18\x02 \x01(\tR\x06tenant\x12\x12\n" +
@@ -3281,7 +3387,14 @@ const file_moksha_v1_run_proto_rawDesc = "" +
 	"\atrigger\x18\x0e \x01(\tR\atrigger\x126\n" +
 	"\vstep_counts\x18\x0f \x01(\v2\x15.moksha.v1.StepCountsR\n" +
 	"stepCounts\x12,\n" +
-	"\awaiting\x18\x10 \x01(\v2\x12.moksha.v1.WaitingR\awaiting\"\x83\x02\n" +
+	"\awaiting\x18\x10 \x01(\v2\x12.moksha.v1.WaitingR\awaiting\x128\n" +
+	"\fsignal_waits\x18\x11 \x03(\v2\x15.moksha.v1.SignalWaitR\vsignalWaits\"p\n" +
+	"\n" +
+	"SignalWait\x12\x10\n" +
+	"\x03seq\x18\x01 \x01(\x05R\x03seq\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12<\n" +
+	"\ftimes_out_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"timesOutAt\"\x83\x02\n" +
 	"\aWaiting\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x12\n" +
@@ -3353,7 +3466,7 @@ func file_moksha_v1_run_proto_rawDescGZIP() []byte {
 	return file_moksha_v1_run_proto_rawDescData
 }
 
-var file_moksha_v1_run_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_moksha_v1_run_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_moksha_v1_run_proto_goTypes = []any{
 	(*PlanRunsRequest)(nil),            // 0: moksha.v1.PlanRunsRequest
 	(*PlanRunsResponse)(nil),           // 1: moksha.v1.PlanRunsResponse
@@ -3397,85 +3510,88 @@ var file_moksha_v1_run_proto_goTypes = []any{
 	(*GetRunRequest)(nil),              // 39: moksha.v1.GetRunRequest
 	(*GetRunResponse)(nil),             // 40: moksha.v1.GetRunResponse
 	(*Run)(nil),                        // 41: moksha.v1.Run
-	(*Waiting)(nil),                    // 42: moksha.v1.Waiting
-	(*StepCounts)(nil),                 // 43: moksha.v1.StepCounts
-	(*Step)(nil),                       // 44: moksha.v1.Step
-	(*timestamppb.Timestamp)(nil),      // 45: google.protobuf.Timestamp
-	(*durationpb.Duration)(nil),        // 46: google.protobuf.Duration
+	(*SignalWait)(nil),                 // 42: moksha.v1.SignalWait
+	(*Waiting)(nil),                    // 43: moksha.v1.Waiting
+	(*StepCounts)(nil),                 // 44: moksha.v1.StepCounts
+	(*Step)(nil),                       // 45: moksha.v1.Step
+	(*timestamppb.Timestamp)(nil),      // 46: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),        // 47: google.protobuf.Duration
 }
 var file_moksha_v1_run_proto_depIdxs = []int32{
 	2,  // 0: moksha.v1.PlanRunsResponse.plans:type_name -> moksha.v1.RunPlan
-	45, // 1: moksha.v1.RunPlan.earlier_created_at:type_name -> google.protobuf.Timestamp
+	46, // 1: moksha.v1.RunPlan.earlier_created_at:type_name -> google.protobuf.Timestamp
 	3,  // 2: moksha.v1.RunPlan.steps:type_name -> moksha.v1.StepPlan
 	6,  // 3: moksha.v1.ListCodeResponse.steps:type_name -> moksha.v1.Code
 	6,  // 4: moksha.v1.ListCodeResponse.pipelines:type_name -> moksha.v1.Code
-	45, // 5: moksha.v1.Code.registered_at:type_name -> google.protobuf.Timestamp
+	46, // 5: moksha.v1.Code.registered_at:type_name -> google.protobuf.Timestamp
 	9,  // 6: moksha.v1.ListPoolsResponse.pools:type_name -> moksha.v1.Pool
-	45, // 7: moksha.v1.Pool.decided_at:type_name -> google.protobuf.Timestamp
+	46, // 7: moksha.v1.Pool.decided_at:type_name -> google.protobuf.Timestamp
 	12, // 8: moksha.v1.ListWorkersResponse.workers:type_name -> moksha.v1.Worker
-	45, // 9: moksha.v1.Worker.last_seen:type_name -> google.protobuf.Timestamp
+	46, // 9: moksha.v1.Worker.last_seen:type_name -> google.protobuf.Timestamp
 	15, // 10: moksha.v1.GetPipelineWorkersResponse.workers:type_name -> moksha.v1.PipelineWorker
-	46, // 11: moksha.v1.PipelineWorker.step_median:type_name -> google.protobuf.Duration
-	46, // 12: moksha.v1.PipelineWorker.step_p95:type_name -> google.protobuf.Duration
-	45, // 13: moksha.v1.PipelineWorker.first_at:type_name -> google.protobuf.Timestamp
-	45, // 14: moksha.v1.PipelineWorker.last_at:type_name -> google.protobuf.Timestamp
+	47, // 11: moksha.v1.PipelineWorker.step_median:type_name -> google.protobuf.Duration
+	47, // 12: moksha.v1.PipelineWorker.step_p95:type_name -> google.protobuf.Duration
+	46, // 13: moksha.v1.PipelineWorker.first_at:type_name -> google.protobuf.Timestamp
+	46, // 14: moksha.v1.PipelineWorker.last_at:type_name -> google.protobuf.Timestamp
 	18, // 15: moksha.v1.ListPipelinesResponse.pipelines:type_name -> moksha.v1.Pipeline
 	41, // 16: moksha.v1.ListRunsResponse.runs:type_name -> moksha.v1.Run
 	41, // 17: moksha.v1.GetEventLogResponse.run:type_name -> moksha.v1.Run
 	27, // 18: moksha.v1.GetEventLogResponse.event_log:type_name -> moksha.v1.LoggedEvent
-	45, // 19: moksha.v1.LoggedEvent.time:type_name -> google.protobuf.Timestamp
+	46, // 19: moksha.v1.LoggedEvent.time:type_name -> google.protobuf.Timestamp
 	30, // 20: moksha.v1.GetHistoryResponse.entries:type_name -> moksha.v1.HistoryEntry
-	45, // 21: moksha.v1.HistoryEntry.time:type_name -> google.protobuf.Timestamp
+	46, // 21: moksha.v1.HistoryEntry.time:type_name -> google.protobuf.Timestamp
 	34, // 22: moksha.v1.ListSchedulesResponse.schedules:type_name -> moksha.v1.Schedule
 	33, // 23: moksha.v1.ListSchedulesResponse.subscriptions:type_name -> moksha.v1.Subscription
-	46, // 24: moksha.v1.Subscription.debounce:type_name -> google.protobuf.Duration
-	46, // 25: moksha.v1.Subscription.max_wait:type_name -> google.protobuf.Duration
-	45, // 26: moksha.v1.Schedule.cursor:type_name -> google.protobuf.Timestamp
-	45, // 27: moksha.v1.Schedule.next_run:type_name -> google.protobuf.Timestamp
+	47, // 24: moksha.v1.Subscription.debounce:type_name -> google.protobuf.Duration
+	47, // 25: moksha.v1.Subscription.max_wait:type_name -> google.protobuf.Duration
+	46, // 26: moksha.v1.Schedule.cursor:type_name -> google.protobuf.Timestamp
+	46, // 27: moksha.v1.Schedule.next_run:type_name -> google.protobuf.Timestamp
 	41, // 28: moksha.v1.GetRunResponse.run:type_name -> moksha.v1.Run
-	45, // 29: moksha.v1.Run.created_at:type_name -> google.protobuf.Timestamp
-	45, // 30: moksha.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
-	44, // 31: moksha.v1.Run.steps:type_name -> moksha.v1.Step
-	43, // 32: moksha.v1.Run.step_counts:type_name -> moksha.v1.StepCounts
-	42, // 33: moksha.v1.Run.waiting:type_name -> moksha.v1.Waiting
-	45, // 34: moksha.v1.Waiting.since:type_name -> google.protobuf.Timestamp
-	45, // 35: moksha.v1.Step.scheduled_at:type_name -> google.protobuf.Timestamp
-	45, // 36: moksha.v1.Step.finished_at:type_name -> google.protobuf.Timestamp
-	37, // 37: moksha.v1.RunService.StartRun:input_type -> moksha.v1.StartRunRequest
-	39, // 38: moksha.v1.RunService.GetRun:input_type -> moksha.v1.GetRunRequest
-	35, // 39: moksha.v1.RunService.SignalRun:input_type -> moksha.v1.SignalRunRequest
-	20, // 40: moksha.v1.RunService.CancelRun:input_type -> moksha.v1.CancelRunRequest
-	22, // 41: moksha.v1.RunService.ResumeRun:input_type -> moksha.v1.ResumeRunRequest
-	19, // 42: moksha.v1.RunService.ListRuns:input_type -> moksha.v1.ListRunsRequest
-	25, // 43: moksha.v1.RunService.GetEventLog:input_type -> moksha.v1.GetEventLogRequest
-	28, // 44: moksha.v1.RunService.GetHistory:input_type -> moksha.v1.GetHistoryRequest
-	31, // 45: moksha.v1.RunService.ListSchedules:input_type -> moksha.v1.ListSchedulesRequest
-	16, // 46: moksha.v1.RunService.ListPipelines:input_type -> moksha.v1.ListPipelinesRequest
-	10, // 47: moksha.v1.RunService.ListWorkers:input_type -> moksha.v1.ListWorkersRequest
-	13, // 48: moksha.v1.RunService.GetPipelineWorkers:input_type -> moksha.v1.GetPipelineWorkersRequest
-	7,  // 49: moksha.v1.RunService.ListPools:input_type -> moksha.v1.ListPoolsRequest
-	4,  // 50: moksha.v1.RunService.ListCode:input_type -> moksha.v1.ListCodeRequest
-	0,  // 51: moksha.v1.RunService.PlanRuns:input_type -> moksha.v1.PlanRunsRequest
-	38, // 52: moksha.v1.RunService.StartRun:output_type -> moksha.v1.StartRunResponse
-	40, // 53: moksha.v1.RunService.GetRun:output_type -> moksha.v1.GetRunResponse
-	36, // 54: moksha.v1.RunService.SignalRun:output_type -> moksha.v1.SignalRunResponse
-	21, // 55: moksha.v1.RunService.CancelRun:output_type -> moksha.v1.CancelRunResponse
-	23, // 56: moksha.v1.RunService.ResumeRun:output_type -> moksha.v1.ResumeRunResponse
-	24, // 57: moksha.v1.RunService.ListRuns:output_type -> moksha.v1.ListRunsResponse
-	26, // 58: moksha.v1.RunService.GetEventLog:output_type -> moksha.v1.GetEventLogResponse
-	29, // 59: moksha.v1.RunService.GetHistory:output_type -> moksha.v1.GetHistoryResponse
-	32, // 60: moksha.v1.RunService.ListSchedules:output_type -> moksha.v1.ListSchedulesResponse
-	17, // 61: moksha.v1.RunService.ListPipelines:output_type -> moksha.v1.ListPipelinesResponse
-	11, // 62: moksha.v1.RunService.ListWorkers:output_type -> moksha.v1.ListWorkersResponse
-	14, // 63: moksha.v1.RunService.GetPipelineWorkers:output_type -> moksha.v1.GetPipelineWorkersResponse
-	8,  // 64: moksha.v1.RunService.ListPools:output_type -> moksha.v1.ListPoolsResponse
-	5,  // 65: moksha.v1.RunService.ListCode:output_type -> moksha.v1.ListCodeResponse
-	1,  // 66: moksha.v1.RunService.PlanRuns:output_type -> moksha.v1.PlanRunsResponse
-	52, // [52:67] is the sub-list for method output_type
-	37, // [37:52] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	46, // 29: moksha.v1.Run.created_at:type_name -> google.protobuf.Timestamp
+	46, // 30: moksha.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
+	45, // 31: moksha.v1.Run.steps:type_name -> moksha.v1.Step
+	44, // 32: moksha.v1.Run.step_counts:type_name -> moksha.v1.StepCounts
+	43, // 33: moksha.v1.Run.waiting:type_name -> moksha.v1.Waiting
+	42, // 34: moksha.v1.Run.signal_waits:type_name -> moksha.v1.SignalWait
+	46, // 35: moksha.v1.SignalWait.times_out_at:type_name -> google.protobuf.Timestamp
+	46, // 36: moksha.v1.Waiting.since:type_name -> google.protobuf.Timestamp
+	46, // 37: moksha.v1.Step.scheduled_at:type_name -> google.protobuf.Timestamp
+	46, // 38: moksha.v1.Step.finished_at:type_name -> google.protobuf.Timestamp
+	37, // 39: moksha.v1.RunService.StartRun:input_type -> moksha.v1.StartRunRequest
+	39, // 40: moksha.v1.RunService.GetRun:input_type -> moksha.v1.GetRunRequest
+	35, // 41: moksha.v1.RunService.SignalRun:input_type -> moksha.v1.SignalRunRequest
+	20, // 42: moksha.v1.RunService.CancelRun:input_type -> moksha.v1.CancelRunRequest
+	22, // 43: moksha.v1.RunService.ResumeRun:input_type -> moksha.v1.ResumeRunRequest
+	19, // 44: moksha.v1.RunService.ListRuns:input_type -> moksha.v1.ListRunsRequest
+	25, // 45: moksha.v1.RunService.GetEventLog:input_type -> moksha.v1.GetEventLogRequest
+	28, // 46: moksha.v1.RunService.GetHistory:input_type -> moksha.v1.GetHistoryRequest
+	31, // 47: moksha.v1.RunService.ListSchedules:input_type -> moksha.v1.ListSchedulesRequest
+	16, // 48: moksha.v1.RunService.ListPipelines:input_type -> moksha.v1.ListPipelinesRequest
+	10, // 49: moksha.v1.RunService.ListWorkers:input_type -> moksha.v1.ListWorkersRequest
+	13, // 50: moksha.v1.RunService.GetPipelineWorkers:input_type -> moksha.v1.GetPipelineWorkersRequest
+	7,  // 51: moksha.v1.RunService.ListPools:input_type -> moksha.v1.ListPoolsRequest
+	4,  // 52: moksha.v1.RunService.ListCode:input_type -> moksha.v1.ListCodeRequest
+	0,  // 53: moksha.v1.RunService.PlanRuns:input_type -> moksha.v1.PlanRunsRequest
+	38, // 54: moksha.v1.RunService.StartRun:output_type -> moksha.v1.StartRunResponse
+	40, // 55: moksha.v1.RunService.GetRun:output_type -> moksha.v1.GetRunResponse
+	36, // 56: moksha.v1.RunService.SignalRun:output_type -> moksha.v1.SignalRunResponse
+	21, // 57: moksha.v1.RunService.CancelRun:output_type -> moksha.v1.CancelRunResponse
+	23, // 58: moksha.v1.RunService.ResumeRun:output_type -> moksha.v1.ResumeRunResponse
+	24, // 59: moksha.v1.RunService.ListRuns:output_type -> moksha.v1.ListRunsResponse
+	26, // 60: moksha.v1.RunService.GetEventLog:output_type -> moksha.v1.GetEventLogResponse
+	29, // 61: moksha.v1.RunService.GetHistory:output_type -> moksha.v1.GetHistoryResponse
+	32, // 62: moksha.v1.RunService.ListSchedules:output_type -> moksha.v1.ListSchedulesResponse
+	17, // 63: moksha.v1.RunService.ListPipelines:output_type -> moksha.v1.ListPipelinesResponse
+	11, // 64: moksha.v1.RunService.ListWorkers:output_type -> moksha.v1.ListWorkersResponse
+	14, // 65: moksha.v1.RunService.GetPipelineWorkers:output_type -> moksha.v1.GetPipelineWorkersResponse
+	8,  // 66: moksha.v1.RunService.ListPools:output_type -> moksha.v1.ListPoolsResponse
+	5,  // 67: moksha.v1.RunService.ListCode:output_type -> moksha.v1.ListCodeResponse
+	1,  // 68: moksha.v1.RunService.PlanRuns:output_type -> moksha.v1.PlanRunsResponse
+	54, // [54:69] is the sub-list for method output_type
+	39, // [39:54] is the sub-list for method input_type
+	39, // [39:39] is the sub-list for extension type_name
+	39, // [39:39] is the sub-list for extension extendee
+	0,  // [0:39] is the sub-list for field type_name
 }
 
 func init() { file_moksha_v1_run_proto_init() }
@@ -3489,7 +3605,7 @@ func file_moksha_v1_run_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moksha_v1_run_proto_rawDesc), len(file_moksha_v1_run_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   45,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

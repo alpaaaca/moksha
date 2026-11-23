@@ -69,6 +69,10 @@ message PipelineInfo {
   string pipeline = 1;
   string title = 2;
   string description = 3;
+  // It is a loop: its code can continue as new (ctx.continue_as_new).
+  bool loops = 4;
+  // Where the web UI's Pipelines page lists it ("shop"); empty: on its own.
+  string group = 5;
 }
 
 // DatasetRetention keeps, per partition, the latest data version and those among

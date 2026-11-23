@@ -192,6 +192,13 @@ message Pipeline {
   // Empty if its code gives none.
   string title = 2;
   string description = 3;
+  // It is a loop, a pipeline that runs until it is stopped: the newest build
+  // that defines it says so, or a run of it continued as new since that
+  // build registered (builds of older SDKs don't say).
+  bool loops = 4;
+  // Its group ("shop"), as the newest build that defines it says: the
+  // Pipelines page lists pipelines of one group under it. Empty: none.
+  string group = 5;
 }
 
 message ListRunsRequest {
@@ -208,6 +215,9 @@ message ListRunsRequest {
   // Also return each run's steps (name, status, reused, times, dataset; no
   // results or edges): what each run wrote and reused. At most 200 runs then.
   bool with_steps = 7;
+  // pipeline: only runs of pipelines that end; loop: only runs of loops
+  // (Pipeline.loops). Empty: both.
+  string kind = 8;
 }
 
 message CancelRunRequest {
@@ -375,6 +385,17 @@ message Run {
   // A run in progress with work queued that no worker took yet: why
   // (GetRun and ListRuns, from the leader's memory).
   Waiting waiting = 16;
+  // A run in progress: the signals it waits for, in the order it asked
+  // (GetRun and ListRuns, from the leader's memory).
+  repeated SignalWait signal_waits = 17;
+}
+
+// SignalWait is one wait_signal nothing answered yet.
+message SignalWait {
+  int32 seq = 1;
+  string name = 2;
+  // Unset: it waits for as long as it takes.
+  google.protobuf.Timestamp times_out_at = 3;
 }
 
 // Waiting is a run's queued work and why no worker runs it yet.

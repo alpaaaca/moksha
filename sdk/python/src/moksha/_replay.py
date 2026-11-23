@@ -10,6 +10,7 @@ order on every replay (see docs/spikes/s1-python-replay.md).
 from __future__ import annotations
 
 import datetime as _dt
+import dataclasses
 import inspect
 import json
 import random as _random
@@ -76,6 +77,31 @@ def _partition_value(v: Any) -> str:
 class _Result:
     payload: dict
     time: _dt.datetime
+
+
+def _pointer(*parts: str) -> str:
+    """A path to a value inside a step's arguments, as a JSON Pointer
+    without its leading slash: "orders/0", "by_region/eu". Escaped (~0, ~1)
+    so two paths are never the same name."""
+    return "/".join(str(p).replace("~", "~0").replace("/", "~1") for p in parts)
+
+
+def _lift(v: Any, path: str, inputs: list[dict]) -> Any:
+    """encode(v), but each data version in it, however deep (a list of
+    them, a dict, a dataclass), becomes an input named by its path, and a
+    {"$input": path} in its place: the server gets its lineage, and its ID
+    stays out of the arguments (the fingerprint has its content hash)."""
+    if isinstance(v, DataVersion):
+        inputs.append({"name": path, "data_version": v.id})
+        return {"$input": path}
+    if isinstance(v, dict):
+        return {str(k): _lift(x, f"{path}/{_pointer(str(k))}", inputs) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_lift(x, f"{path}/{i}", inputs) for i, x in enumerate(v)]
+    if dataclasses.is_dataclass(v) and not isinstance(v, type):
+        # Field by field: dataclasses.asdict would turn a data version in it into a plain dict.
+        return {f.name: _lift(getattr(v, f.name), f"{path}/{_pointer(f.name)}", inputs) for f in dataclasses.fields(v)}
+    return encode(v)
 
 
 @dataclass
@@ -161,13 +187,8 @@ class Ctx:
     def _step_command(self, f: Callable | str, args: tuple, kwargs: dict) -> tuple[int, StepDef]:
         d = step_def(f)
         bound = inspect.signature(d.fn).bind(*args, **kwargs)
-        inputs, call = [], {}
-        for name, value in bound.arguments.items():
-            if isinstance(value, DataVersion):
-                inputs.append({"name": name, "data_version": value.id})
-                call[name] = {"$input": name}  # the ID stays out of the arguments (and the fingerprint)
-            else:
-                call[name] = encode(value)
+        inputs: list[dict] = []
+        call = {name: _lift(value, _pointer(name), inputs) for name, value in bound.arguments.items()}
         body: dict[str, Any] = {"name": d.name, "argsJson": json.dumps(call, sort_keys=True)}
         if d.queue:
             body["queue"] = d.queue

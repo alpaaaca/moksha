@@ -80,7 +80,8 @@ func waitingMessage(w core.Waiting) *mokshav1.Waiting {
 		Seq: int32(w.Seq), Queue: w.Queue, Since: timestamppb.New(w.Since), Workers: int32(w.Workers), Builds: w.Builds, Pool: w.Pool}
 }
 
-// addWaiting sets why the running ones among runs wait, if they do.
+// addWaiting sets what the running ones among runs wait for, if they do:
+// signals, and workers (with why).
 func (s *RunServer) addWaiting(ctx context.Context, runs ...*mokshav1.Run) error {
 	var ids []string
 	for _, h := range runs {
@@ -95,7 +96,18 @@ func (s *RunServer) addWaiting(ctx context.Context, runs ...*mokshav1.Run) error
 	if err != nil {
 		return err
 	}
+	signals, err := s.core.SignalWaits(ctx, ids)
+	if err != nil {
+		return err
+	}
 	for _, h := range runs {
+		for _, w := range signals[h.Id] {
+			m := &mokshav1.SignalWait{Seq: int32(w.Seq), Name: w.Name}
+			if !w.TimesOutAt.IsZero() {
+				m.TimesOutAt = timestamppb.New(w.TimesOutAt)
+			}
+			h.SignalWaits = append(h.SignalWaits, m)
+		}
 		if w, ok := ws[h.Id]; ok {
 			h.Waiting = waitingMessage(w)
 		}

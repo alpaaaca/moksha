@@ -232,10 +232,14 @@ func (x *RegisterBuildRequest) GetPipelineInfo() []*PipelineInfo {
 // PipelineInfo describes a pipeline for people: a title ("Daily revenue")
 // and a longer description.
 type PipelineInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Pipeline      string                 `protobuf:"bytes,1,opt,name=pipeline,proto3" json:"pipeline,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Pipeline    string                 `protobuf:"bytes,1,opt,name=pipeline,proto3" json:"pipeline,omitempty"`
+	Title       string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	// It is a loop: its code can continue as new (ctx.continue_as_new).
+	Loops bool `protobuf:"varint,4,opt,name=loops,proto3" json:"loops,omitempty"`
+	// Where the web UI's Pipelines page lists it ("shop"); empty: on its own.
+	Group         string `protobuf:"bytes,5,opt,name=group,proto3" json:"group,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -287,6 +291,20 @@ func (x *PipelineInfo) GetTitle() string {
 func (x *PipelineInfo) GetDescription() string {
 	if x != nil {
 		return x.Description
+	}
+	return ""
+}
+
+func (x *PipelineInfo) GetLoops() bool {
+	if x != nil {
+		return x.Loops
+	}
+	return false
+}
+
+func (x *PipelineInfo) GetGroup() string {
+	if x != nil {
+		return x.Group
 	}
 	return ""
 }
@@ -2753,11 +2771,13 @@ const file_moksha_v1_worker_proto_rawDesc = "" +
 	"\rpipeline_info\x18\a \x03(\v2\x17.moksha.v1.PipelineInfoR\fpipelineInfo\x1a?\n" +
 	"\x11StepVersionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"b\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8e\x01\n" +
 	"\fPipelineInfo\x12\x1a\n" +
 	"\bpipeline\x18\x01 \x01(\tR\bpipeline\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"\x81\x01\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x14\n" +
+	"\x05loops\x18\x04 \x01(\bR\x05loops\x12\x14\n" +
+	"\x05group\x18\x05 \x01(\tR\x05group\"\x81\x01\n" +
 	"\x10DatasetRetention\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12#\n" +
 	"\rkeep_versions\x18\x02 \x01(\x05R\fkeepVersions\x124\n" +

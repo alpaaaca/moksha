@@ -177,3 +177,28 @@ func TestSignalsSurviveRestart(t *testing.T) {
 	h.replay(seqs(waitSignal("approve", time.Hour), waitSignal("never", 0), waitSignal("later", 0)), nil)
 	assert.Equal(t, kept, h.deliveries(id)[3].Signal)
 }
+
+func TestSignalWaitsSayWhatRunsWaitForAlsoAfterARestart(t *testing.T) {
+	h := newHarness(t)
+	id := h.startRun("x")
+	h.replay(seqs(waitSignal("file_arrived", 0), waitSignal("approve", time.Hour)), nil)
+	want := []SignalWait{{Seq: 1, Name: "file_arrived"}, {Seq: 2, Name: "approve", TimesOutAt: h.clock.Now().Add(time.Hour)}}
+	check := func(when string) {
+		got, err := h.core.SignalWaits(h.ctx, []string{id, "unknown"})
+		require.NoError(t, err)
+		require.Len(t, got, 1, when)
+		require.Len(t, got[id], len(want), when)
+		for i, w := range want {
+			assert.Equal(t, w.Seq, got[id][i].Seq, when)
+			assert.Equal(t, w.Name, got[id][i].Name, when)
+			assert.True(t, w.TimesOutAt.Equal(got[id][i].TimesOutAt), when)
+		}
+	}
+	check("while waiting")
+	h.restart()
+	check("after a restart")
+
+	h.signal(id, "file_arrived", `1`)
+	want = want[1:]
+	check("after one was answered")
+}

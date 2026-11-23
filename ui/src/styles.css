@@ -75,7 +75,7 @@ body { margin: 0; }
 .health.down .dot { background: var(--bad); }
 main { min-width: 0; box-sizing: border-box; max-width: 1240px; padding: 22px 36px 64px; }
 @media (max-width: 760px) {
-  .shell { grid-template-columns: 1fr; }
+  .shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
   .sidebar .search { width: auto; }
   .sidenav { flex-direction: row; }
@@ -185,7 +185,6 @@ section > table, .lede + table { margin-top: 18px; }
 /* The pipelines list. */
 .pipelines td { vertical-align: middle; }
 .pipelines td:first-child a { color: var(--fg); font-weight: 600; }
-.pipeline-desc { max-width: 52ch; margin-top: 2px; color: var(--dim); }
 .recent { display: inline-flex; align-items: flex-end; gap: 2px; height: 26px; }
 .recent-run { display: flex; align-items: flex-end; width: 7px; height: 100%; }
 .recent-run span { display: block; width: 100%; border-radius: 2px; background: var(--faint); }
@@ -250,8 +249,24 @@ nav.tabs a.tab.active { color: var(--fg); background: var(--hover); box-shadow: 
 
 .steps td { vertical-align: middle; }
 .steps td:nth-child(4) { white-space: nowrap; }
+.checkpoint { white-space: nowrap; }
+.checkpoint .saved { display: inline-flex; align-items: center; gap: 5px; color: var(--ok); font-weight: 500; }
+.checkpoint .saved .mono { font-weight: 400; }
+
+/* Durability: how much of a run is checkpointed. */
+.durability {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 12px; padding: 10px 14px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+}
+.durability > svg { color: var(--ok); }
+.durability-bar { display: inline-flex; gap: 2px; }
+.durability-bar i { width: 14px; height: 6px; border-radius: 2px; background: var(--line-strong); }
+.durability-bar i.saved { background: var(--ok); }
+.durability-bar i.running { background: var(--run); animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 50% { opacity: 0.35; } }
 .steps td:first-child strong { font-family: var(--mono); font-weight: 600; }
-.timeline-head { width: 30%; }
+.timeline-head { width: 20%; }
+.steps td:nth-child(6) { min-width: 200px; }
 .track { position: relative; height: 8px; border-radius: 4px; background: var(--hover); }
 .bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--run); }
 .bar-completed { background: var(--ok); }
@@ -337,6 +352,11 @@ nav.tabs a.tab.active { color: var(--fg); background: var(--hover); box-shadow: 
 }
 .dag-dataset svg { flex: none; }
 .dag-dataset span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.dag-saved {
+  position: absolute; right: -7px; bottom: -7px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  color: var(--ok); background: var(--card); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 45%, transparent), 0 0 0 3px var(--bg);
+}
+.dag-saved.partial { color: var(--dim); box-shadow: 0 0 0 1px var(--line-strong), 0 0 0 3px var(--bg); }
 .dag-count { position: absolute; top: -9px; right: -9px; padding: 1px 7px; border-radius: 999px; font: 700 11px var(--mono); color: var(--bg); background: var(--fg); box-shadow: 0 0 0 2px var(--bg); }
 .node-completed { --tone: var(--ok); }
 .node-failed, .node-cancelled { --tone: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
@@ -372,6 +392,76 @@ nav.tabs a.tab.active { color: var(--fg); background: var(--hover); box-shadow: 
 .palette-foot kbd { margin-right: 3px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .edge-running path, .node-running .dag-badge, .spin, .status .dot { animation: none !important; }
+  .edge-running path, .node-running .dag-badge, .spin, .status .dot, .durability-bar i { animation: none !important; }
   .dag-node { transition: none; }
 }
+
+/* Signals and loops: cards, as each is one thing to look after, not a row of runs. */
+.cards { display: grid; gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
+.signal .cards { margin-top: 0; }
+.card { --tone: var(--faint); min-width: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+.card > p { margin: 6px 0 0; }
+.card-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.card-head > svg { flex: none; color: var(--tone); }
+.card-title { color: var(--fg); font-size: 15px; font-weight: 600; }
+.card-aside { margin-left: auto; color: var(--tone); font-size: 12px; font-weight: 500; }
+.card.asks { --tone: var(--warn); }
+.signal-name { font: 600 13px var(--mono); letter-spacing: 0; text-transform: none; color: var(--fg); }
+.send-signal { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.send-signal input { flex: 1; min-width: 160px; max-width: 360px; }
+.loop-live, .loop-rest { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+p.loop-rest { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+.loop.is-live { --tone: var(--run); }
+.loop.is-broken { --tone: var(--bad); }
+.loop-facts { display: flex; flex-wrap: wrap; gap: 10px 32px; margin: 0; }
+.loop-facts dt { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.loop-facts dd { margin: 2px 0 0; font: 600 14px var(--mono); }
+.empty { margin-top: 18px; padding: 28px 16px; border: 1px dashed var(--line-strong); border-radius: 12px; color: var(--dim); text-align: center; }
+.nav-count { margin-left: auto; min-width: 18px; padding: 0 5px; border-radius: 999px; font: 600 11px/18px var(--mono); text-align: center; color: var(--bg); background: var(--warn); }
+.nav-count.bad { background: var(--bad); }
+.sidenav .nav-apart { margin-top: 14px; }
+@media (max-width: 760px) {
+  .sidenav { flex-wrap: wrap; }
+  .sidenav .nav-apart { margin-top: 0; }
+  .nav-count { margin-left: 0; }
+}
+
+/* Pipelines of one group: a row that opens in place (the start page). */
+/* The start page's rows, groups and pipelines alike: one line each. */
+.pipelines tbody td { padding-top: 7px; padding-bottom: 7px; white-space: nowrap; vertical-align: middle; }
+.pipelines tbody .recent { height: 18px; }
+.pipelines tr.group-row td { background: color-mix(in srgb, var(--fg) 2.5%, transparent); }
+.group-count { display: inline-block; min-width: 16px; margin: 0 8px 0 6px; padding: 0 5px; border-radius: 999px; font: 600 11px/16px var(--mono); text-align: center; color: var(--dim); background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.group-last { display: inline-flex; align-items: center; gap: 6px; }
+.pipelines tr.group-row svg { vertical-align: -2px; color: var(--dim); }
+.group-toggle { all: unset; display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 4px; border-radius: 5px; cursor: pointer; vertical-align: -4px; }
+.group-toggle:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
+.group-toggle:focus-visible { outline: 2px solid var(--accent); }
+.group-toggle svg { transition: transform 0.15s; }
+tbody.group.open .group-toggle svg { transform: rotate(90deg); }
+.pipelines tr.in-group td:first-child { padding-left: 52px; }
+.pipelines tbody.group.open tr:last-child td { border-bottom: 1px solid var(--line-strong); }
+.stat-sub { font: 500 13px var(--sans, inherit); color: var(--dim); }
+@media (prefers-reduced-motion: reduce) { .group-toggle svg { transition: none; } }
+
+/* Start a run: its inputs in a JSON editor. */
+.start-form { max-width: 720px; margin: 8px 0 16px; }
+.start-head, .start-foot { display: flex; align-items: center; gap: 10px; }
+.start-head { justify-content: space-between; margin-bottom: 6px; }
+.start-foot { flex-wrap: wrap; margin-top: 10px; }
+.start-tools { display: flex; gap: 12px; }
+.link-button { all: unset; cursor: pointer; font-size: 12px; color: var(--accent); }
+.link-button:disabled { color: var(--faint); cursor: default; }
+.link-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.json-editor { display: flex; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--raised); }
+.json-editor:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+.json-editor.invalid { border-color: var(--bad); }
+.json-gutter {
+  flex: none; overflow: hidden; padding: 10px 8px 10px 12px; min-width: 2ch; text-align: right; user-select: none;
+  font: 13px/1.6 var(--mono); color: var(--faint); background: color-mix(in srgb, var(--fg) 3%, transparent); border-right: 1px solid var(--line);
+}
+.json-editor textarea {
+  flex: 1; min-width: 0; margin: 0; padding: 10px 12px; border: 0; outline: 0; resize: vertical; tab-size: 2;
+  font: 13px/1.6 var(--mono); color: var(--fg); background: transparent; white-space: pre; overflow: auto;
+}
+.start-foot button[type="submit"]:disabled { opacity: 0.45; cursor: not-allowed; }

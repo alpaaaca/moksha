@@ -18,8 +18,11 @@ function run(id: string, name: string, status: string, extra: MessageInitShape<t
   return create(RunSchema, { id, tenant: "default", name, status, createdAt: t0, ...extra });
 }
 
+// Runs and loops to serve in place of the usual ones.
+type World = { runs: ReturnType<typeof run>[]; loops: string[]; groups?: Record<string, string> };
+
 // A RunService in memory, recording what the UI asked.
-function fakeServer() {
+function fakeServer(world?: World) {
   const calls: Record<string, unknown[]> = {};
   const record = (m: string, req: unknown) => (calls[m] ??= []).push(req);
   const daily = run("01M6AAAAAAAAAAAAAAAAAAAAAA", "daily", "running", {
@@ -73,7 +76,9 @@ function fakeServer() {
       listRuns(req) {
         record("listRuns", req);
         if (req.parentId) return { runs: [run("01M6CHILDCHILDCHILDCHILD01", "child", "completed", { parentId: req.parentId })] };
-        const all = [daily, done, stuck, broken];
+        const all = (world?.runs ?? [daily, done, stuck, broken]).filter(
+          (h) => !req.kind || (req.kind === "loop") === !!world?.loops.includes(h.name),
+        );
         return { runs: all.filter((h) => (!req.name || h.name === req.name) && (!req.statuses.length || req.statuses.includes(h.status))) };
       },
       getRun(req) {
@@ -130,6 +135,10 @@ function fakeServer() {
         };
       },
       listPipelines() {
+        if (world) {
+          const names = new Set([...world.runs.map((h) => h.name), ...world.loops]);
+          return { pipelines: [...names].map((name) => ({ name, loops: world.loops.includes(name), group: world.groups?.[name] ?? "" })) };
+        }
         return { pipelines: [{ name: "daily", title: "Daily revenue", description: "Orders to a report, per day." }, { name: "hourly" }] };
       },
       listSchedules() {
@@ -154,9 +163,9 @@ function fakeServer() {
   return { api: apiFor(transport), calls };
 }
 
-function show(hash: string) {
+function show(hash: string, world?: World) {
   window.location.hash = hash;
-  const server = fakeServer();
+  const server = fakeServer(world);
   render(
     <ApiProvider api={server.api}>
       <App />
@@ -169,7 +178,8 @@ test("the start page: each pipeline's meta information, not its runs", async () 
   show("#/runs");
   const table = await screen.findByRole("table");
   const daily = (await within(table).findByRole("link", { name: "Daily revenue" })).closest("tr")!;
-  expect(daily).toHaveTextContent("Orders to a report, per day.");
+  expect(daily).toHaveAttribute("title", "Orders to a report, per day."); // one line: the description on hover
+  expect(daily).not.toHaveTextContent("Orders to a report");
   expect(daily).toHaveTextContent("0 3 * * *"); // its cron
   expect(daily).toHaveTextContent("Europe/Berlin");
   expect(daily).toHaveTextContent("in 5 h"); // next run
@@ -239,23 +249,33 @@ test("a pipeline: its steps as a graph, all its runs, starting one; a tab each",
   await userEvent.click(within(tabs).getByRole("tab", { name: "Start a run" }));
   await waitFor(() => expect(window.location.hash).toBe("#/pipelines/daily/start"));
   const params = await screen.findByLabelText("inputs");
-  await waitFor(() => expect(params).toHaveValue('{"day":"2026-10-24"}'));
+  await waitFor(() => expect(params).toHaveValue('{\n  "day": "2026-10-24"\n}')); // pretty, to edit
   await userEvent.clear(params);
-  await userEvent.type(params, "not json");
-  await userEvent.click(screen.getByRole("button", { name: "Start a run" }));
-  expect(await screen.findByText(/inputs must be JSON/)).toBeInTheDocument();
+  await userEvent.type(params, "{{}\n  \"day\": 2026-");
+  // What is wrong, and where, as you type; nothing starts.
+  expect(await screen.findByText(/^line 2, column \d+: /)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Start a run" })).toBeDisabled();
+  expect(params).toHaveAttribute("aria-invalid", "true");
+  await userEvent.clear(params);
+  await userEvent.type(params, "[[1]"); // [[ types one [
+  expect(await screen.findByText(/inputs must be a JSON object/)).toBeInTheDocument();
   expect(calls.startRun).toBeUndefined();
 
   await userEvent.clear(params);
-  await userEvent.type(params, '{{"day": "2026-10-25"}');
-  await userEvent.click(screen.getByRole("button", { name: "Start a run" }));
+  await userEvent.type(params, '{{"day":"2026-10-25"}');
+  await userEvent.click(screen.getByRole("button", { name: "Format" }));
+  expect(params).toHaveValue('{\n  "day": "2026-10-25"\n}');
+  await userEvent.type(params, "{Control>}{Enter}{/Control}"); // starts it, like the button
   await waitFor(() => expect(window.location.hash).toBe("#/runs/01M6AAAAAAAAAAAAAAAAAAAAAA"));
-  expect(calls.startRun[0]).toMatchObject({ name: "daily", paramsJson: '{"day": "2026-10-25"}', trigger: "the web UI" });
+  expect(calls.startRun[0]).toMatchObject({ name: "daily", paramsJson: '{\n  "day": "2026-10-25"\n}', trigger: "the web UI" });
 });
 
 test("a scheduled pipeline starts by hand with the latest interval as its inputs", async () => {
   show("#/pipelines/nightly/start");
-  await waitFor(() => expect(screen.getByLabelText("inputs")).toHaveValue('{"interval":{"$interval":{"end":"2026-10-24T13:00:00Z","start":"2026-10-24T12:00:00Z"}}}'));
+  await waitFor(() => expect(screen.getByLabelText("inputs")).toHaveValue(
+      JSON.stringify({ interval: { $interval: { end: "2026-10-24T13:00:00Z", start: "2026-10-24T12:00:00Z" } } }, null, 2),
+    ),
+  );
   expect(screen.getByText("inputs of the latest interval that came due")).toBeInTheDocument();
 });
 
@@ -290,7 +310,7 @@ test("a run: steps on a timeline, children, events, signal and cancel", async ()
   expect(calls.getLogs.at(-1)).toMatchObject({ runId: "01M6AAAAAAAAAAAAAAAAAAAAAA", seq: 2 });
   expect(screen.getByLabelText("logs of")).toHaveValue("2");
   expect(await screen.findByText("child")).toBeInTheDocument();
-  expect(calls.listRuns[0]).toMatchObject({ parentId: "01M6AAAAAAAAAAAAAAAAAAAAAA" });
+  expect(calls.listRuns).toContainEqual(expect.objectContaining({ parentId: "01M6AAAAAAAAAAAAAAAAAAAAAA" }));
 
   // What happened, in sentences; the engine's bookkeeping only when asked.
   const story = await screen.findByRole("list", { name: "what happened" });
@@ -403,7 +423,7 @@ test("pipeline tabs have their own URLs; the overview's is the pipeline's", () =
 test("the sidebar moves between pages; the palette (⌘K) finds a pipeline or run", async () => {
   show("#/runs");
   const nav = screen.getByRole("navigation", { name: "main" });
-  expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Pipelines", "Runs", "Workers"]);
+  expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Pipelines", "Signals", "Loops", "Runs", "Workers"]);
   expect(within(nav).getByRole("link", { name: "Pipelines" })).toHaveClass("active");
   await userEvent.click(within(nav).getByRole("link", { name: "Runs" }));
   await waitFor(() => expect(window.location.hash).toBe("#/activity"));
@@ -425,4 +445,158 @@ test("the sidebar moves between pages; the palette (⌘K) finds a pipeline or ru
   expect(within(again).getAllByRole("option").map((o) => o.textContent)).toEqual(["Workers"]);
   await userEvent.keyboard("{Escape}");
   expect(screen.queryByRole("dialog", { name: "search" })).not.toBeInTheDocument();
+});
+
+test("a run says which steps are checkpointed: saved in its event log, so a restart won't run them again", async () => {
+  show("#/runs/01M6AAAAAAAAAAAAAAAAAAAAAA");
+  const summary = await screen.findByRole("status", { name: "durability" });
+  expect(summary).toHaveTextContent("2 of 3 steps checkpointed");
+  expect(summary).toHaveTextContent("If the server or a worker stops now, these stay done and the run picks up from here; the others run again.");
+  expect([...summary.querySelectorAll(".durability-bar i")].map((i) => i.className)).toEqual(["saved", "saved", "running"]);
+
+  // On the graph: a marker on each checkpointed step.
+  const graph = screen.getByRole("list", { name: "steps graph" });
+  const marked = within(graph).getAllByRole("listitem").map((n) => n.querySelector(".dag-saved") !== null);
+  expect(marked).toEqual([true, true, false]);
+
+  // In the steps table: when each was saved, or what a restart would do.
+  const table = screen.getAllByRole("table")[0];
+  expect(within(table).getByText("extract").closest("tr")!.querySelector(".checkpoint")).toHaveTextContent("saved");
+  expect(within(table).getByText("report").closest("tr")!.querySelector(".checkpoint")).toHaveTextContent(
+    "running: if its worker or the server stops, it runs again",
+  );
+});
+
+test("a finished run is checkpointed throughout", async () => {
+  show("#/runs/01M6EEEEEEEEEEEEEEEEEEEEEE");
+  const summary = await screen.findByRole("status", { name: "durability" });
+  expect(summary).toHaveTextContent("2 of 2 steps checkpointed");
+  expect(summary).toHaveTextContent("How each step ended is saved in the run's event log.");
+});
+
+function threeKinds(): World {
+  return {
+    loops: ["watch", "idle"],
+    runs: [
+      run("01M7CLOSEDCLOSEDCLOSED0001", "close", "completed", { finishedAt: at(5) }),
+      run("01M7PARKEDPARKEDPARKED0001", "gate", "running", {
+        paramsJson: '{"day":"2026-10-26"}',
+        stepCounts: { total: 4, completed: 4 },
+        signalWaits: [{ seq: 5, name: "approve" }],
+      }),
+      run("01M7ATW0RKATW0RKATW0RK0001", "mixed", "running", {
+        stepCounts: { total: 2, completed: 1 },
+        signalWaits: [{ seq: 3, name: "file_arrived" }],
+      }),
+      run("01M7L00PL00PL00PL00P000002", "watch", "running", { trigger: "continue 01M7L00PL00PL00PL00P000001", signalWaits: [{ seq: 2, name: "stop" }] }),
+      run("01M7L00PL00PL00PL00P000001", "watch", "continued", { trigger: "the CLI", finishedAt: at(60) }),
+    ],
+  };
+}
+
+test("the Pipelines page has neither loops nor runs parked on a signal", async () => {
+  show("#/runs", threeKinds());
+  const table = await screen.findByRole("table");
+  expect(within(table).getAllByRole("row").slice(1).map((r) => r.querySelector("a")!.textContent)).toEqual(["close", "gate", "mixed"]);
+  expect(within(table).queryByText("watch")).not.toBeInTheDocument();
+  const gate = within(table).getByRole("link", { name: "gate" }).closest("tr")!;
+  expect(gate).not.toHaveTextContent("running");
+  expect(gate).not.toHaveTextContent("never ran");
+  // One that waits with a step still running is at work.
+  expect(within(table).getByRole("link", { name: "mixed" }).closest("tr")).toHaveTextContent("running");
+  expect(screen.getByText("running now").nextElementSibling).toHaveTextContent("1");
+});
+
+test("Signals: what waits, by signal, answered in place; not what loops listen for", async () => {
+  const { calls } = show("#/signals", threeKinds());
+  const approve = await screen.findByRole("region", { name: "signal approve" });
+  expect(approve).toHaveTextContent("2026-10-26");
+  expect(approve).toHaveTextContent("waits as long as it takes");
+  expect(screen.getByRole("region", { name: "signal file_arrived" })).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "signal stop" })).not.toBeInTheDocument();
+
+  const payload = within(approve).getByLabelText("approve payload");
+  await userEvent.type(payload, "nope");
+  await userEvent.click(within(approve).getByRole("button", { name: "Send approve" }));
+  expect(await within(approve).findByText(/must be JSON/)).toBeInTheDocument();
+  expect(calls.signalRun).toBeUndefined();
+
+  await userEvent.clear(payload);
+  await userEvent.type(payload, '{{"by":"ana"}');
+  await userEvent.click(within(approve).getByRole("button", { name: "Send approve" }));
+  await waitFor(() =>
+    expect(calls.signalRun[0]).toMatchObject({ runId: "01M7PARKEDPARKEDPARKED0001", name: "approve", payloadJson: '{"by":"ana"}' }),
+  );
+});
+
+test("Loops: a chain of runs as one, signalled in the run it is in now", async () => {
+  const { calls } = show("#/loops", threeKinds());
+  const watch = await screen.findByRole("listitem", { name: "loop watch" });
+  expect(within(watch).getByText("runs so far").nextElementSibling).toHaveTextContent(/^2$/);
+  expect(screen.getByRole("listitem", { name: "loop idle" })).toHaveTextContent("never started");
+  expect(screen.queryByRole("listitem", { name: "loop gate" })).not.toBeInTheDocument();
+  await userEvent.click(within(watch).getByRole("button", { name: "Send stop" }));
+  await waitFor(() => expect(calls.signalRun[0]).toMatchObject({ runId: "01M7L00PL00PL00PL00P000002", name: "stop" }));
+});
+
+test("a loop whose start is older than the runs loaded says at least", async () => {
+  const world = threeKinds();
+  world.runs = world.runs.filter((h) => h.status !== "continued");
+  show("#/loops", world);
+  const watch = await screen.findByRole("listitem", { name: "loop watch" });
+  expect(within(watch).getByText("runs so far").nextElementSibling).toHaveTextContent("at least 1");
+});
+
+test("a loop's own page belongs under Loops", async () => {
+  show("#/pipelines/watch", threeKinds());
+  const nav = screen.getByRole("navigation", { name: "main" });
+  await waitFor(() => expect(within(nav).getByRole("link", { name: /^Loops/ })).toHaveClass("active"));
+  expect(within(nav).getByRole("link", { name: /^Pipelines/ })).not.toHaveClass("active");
+});
+
+function grouped(): World {
+  return {
+    loops: [],
+    groups: { close: "shop", month: "shop", rates: "finance" },
+    runs: [
+      run("01M8CLOSEDCLOSEDCLOSED0001", "close", "failed", { finishedAt: at(5), reason: "StepFailed" }),
+      run("01M8M0NTHM0NTHM0NTHM0N0001", "month", "completed", { finishedAt: at(9) }),
+      run("01M8RATESRATESRATESRATE001", "rates", "completed", { finishedAt: at(2) }),
+      run("01M8ALONEALONEALONEAL00001", "alone", "completed", { finishedAt: at(1) }),
+    ],
+  };
+}
+
+test("the start page: a group's pipelines are one row, opened in place, a failure named on it", async () => {
+  localStorage.clear();
+  show("#/runs", grouped());
+  const table = await screen.findByRole("table");
+  const rows = () => within(table).getAllByRole("row").slice(1).map((r) => r.querySelector("a")!.textContent);
+  expect(rows()).toEqual(["finance", "shop", "alone"]); // groups first, by name; then pipelines of none
+  const shop = within(table).getByRole("link", { name: "shop" }).closest("tr")!;
+  expect(within(shop).getByLabelText("2 pipelines")).toHaveTextContent("2");
+  expect(within(shop).getByText("1 failing")).toHaveAttribute("title", "last run failed: close"); // a closed group doesn't hide a failure
+  expect(shop).not.toHaveTextContent("month"); // one line: its pipelines show once it is open
+  expect(shop).toHaveTextContent("1 of 2"); // its runs together
+  expect(screen.getByText("pipelines").nextElementSibling).toHaveTextContent("4 in 2 groups");
+
+  await userEvent.click(within(shop).getByRole("button", { name: "open shop" }));
+  expect(rows()).toEqual(["finance", "shop", "close", "month", "alone"]);
+  expect(JSON.parse(localStorage.getItem("moksha.openGroups")!)).toEqual(["shop"]); // stays open next time
+
+  await userEvent.click(within(table).getByRole("link", { name: "shop" }));
+  await waitFor(() => expect(window.location.hash).toBe("#/groups/shop"));
+});
+
+test("a group's page lists its pipelines; theirs say which group they are in", async () => {
+  show("#/groups/shop", grouped());
+  const table = await screen.findByRole("table");
+  expect(within(table).getAllByRole("row").slice(1).map((r) => r.querySelector("a")!.textContent)).toEqual(["close", "month"]);
+  expect(screen.getByRole("navigation", { name: "breadcrumb" })).toHaveTextContent("Pipelines");
+
+  await userEvent.click(within(table).getByRole("link", { name: "close" }));
+  const crumbs = await screen.findByRole("navigation", { name: "breadcrumb" });
+  await waitFor(() => expect(within(crumbs).getByRole("link", { name: "shop" })).toHaveAttribute("href", "#/groups/shop"));
+  expect(parse("#/groups/a%2Fb")).toEqual({ name: "group", group: "a/b" });
+  expect(href({ name: "group", group: "a/b" })).toBe("#/groups/a%2Fb");
 });

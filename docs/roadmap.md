@@ -269,7 +269,10 @@ each is one PR:
    reused (instead of the grid of squares), with failed and running
    steps; a run's page leads with its output and data versions, then the
    graph, its steps, logs as a terminal and what happened as a timeline.
-   `with_steps` steps now carry their dataset.
+   `with_steps` steps now carry their dataset. A run's page says which
+   steps are checkpointed (how they ended is saved in the run's event
+   log, so a restart won't run them again): how many, a marker on the
+   graph, and when each was saved or what a restart would do to it.
    ✅ **Plain words**, added to this step: a run's page tells what
    happened in sentences instead of raw events ("extract_orders done in
    0.8 s, wrote a new version of raw.orders for 2026-10-28", "reused the
@@ -359,6 +362,20 @@ each is one PR:
    ✅ **Variables in `moksha.yaml`**: `${NAME}` and `${NAME:-default}`
    from the environment, so one committed config serves every machine
    (bucket, port, paths); an unset `${NAME}` is an error with its line.
+   ✅ **Three places for work**, added to step 6: the start page lists only
+   pipelines that end. Runs waiting for a signal are on Signals, answered
+   in place; pipelines that continue as new are on Loops, a chain of runs
+   as one ([architecture.md](architecture.md)).
+   ✅ **Pipeline groups**: `@pipeline(group="shop")`. The start page lists
+   a group as one row (its pipelines' starts, recent runs and failures
+   together), opened in place or on its own page; crumbs and search name
+   it. The newest build that defines a pipeline decides its group.
+   ✅ **Data versions in lists, dicts and dataclasses are inputs**: passed
+   to a step inside its arguments, each is an input named by its path
+   (`parts/0`), so lineage and the run's graph have them and the
+   fingerprint has their content hash, not their ID. Steps that took such
+   arguments get a new fingerprint: each runs once more after the upgrade,
+   then is reused again.
 7. **Web UI: catalog**: datasets, partitions and data versions with stale and
    invalid marked, lineage up and down as a graph, a data version's files, and
    invalidating from the UI (with the same dry run first);

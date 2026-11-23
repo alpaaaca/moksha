@@ -99,12 +99,22 @@ The web UI calls a pipeline by its title:
 docstring; the rest of the docstring describes it. Without either, it shows
 the pipeline's name.
 
+`@mk.pipeline(group="shop")` puts a pipeline in a group. The Pipelines page
+lists each group as one row: how many pipelines it has, how they start,
+their recent runs together, and which of them failed last time. The row
+opens in place, and the group's name opens a page of its own
+(`#/groups/shop`). Pipelines without a group are listed on their own. Like
+a title, a group is only for people: changing it doesn't change how runs
+run or what is reused.
+
 Pipelines can run pipelines: `ctx.run(other, **inputs)` waits for that
 run's result (raising `moksha.RunFailed` if it fails),
 `ctx.start_run(other, **inputs)` starts it and returns its ID. Ending a run
 cancels the runs it waits for. `ctx.continue_as_new(**inputs)` ends the run
 and starts the pipeline again with new inputs and a fresh history, for
-pipelines that loop.
+pipelines that loop. The web UI lists a pipeline whose code calls it under
+Loops, apart from the pipelines that end; a run waiting in
+`ctx.wait_signal` is under Signals until it is answered.
 
 ```python
 @mk.pipeline
@@ -195,7 +205,11 @@ stay, the rest expire; without it every version stays), `version=` (pin the
 code version), `timeout=` (seconds), `retry=mk.Retry(limit, backoff,
 initial, max)` or an int, `queue=`. Pass data versions as arguments: they
 travel as inputs (lineage, and content hashes in the fingerprint), not
-inside the arguments. Raise `moksha.NonRetryable` for failures retrying
+inside the arguments. That holds inside lists, tuples, dicts and
+dataclasses too (`ctx.step(combine, [a, b])`, a subscribed pipeline's
+`versions`): each is an input named by its path (`parts/0`,
+`by_region/eu`), and the step gets the data versions back where they were
+(a dataclass arrives as a dict). Raise `moksha.NonRetryable` for failures retrying
 won't fix.
 
 Without `reuse=` a step runs in every run; within one run a completed

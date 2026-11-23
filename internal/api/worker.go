@@ -67,7 +67,7 @@ func buildRequest(m *mokshav1.RegisterBuildRequest) core.BuildRequest {
 		if b.Info == nil {
 			b.Info = map[string]state.RunInfo{}
 		}
-		b.Info[i.Pipeline] = state.RunInfo{Title: i.Title, Description: i.Description}
+		b.Info[i.Pipeline] = state.RunInfo{Title: i.Title, Description: i.Description, Loops: i.Loops, Group: i.Group}
 	}
 	return b
 }
