@@ -3,6 +3,8 @@
 export const WORDS = {
   pipeline: "Your code that describes the work: which steps run, in what order, with which inputs.",
   run: "One execution of a pipeline, for some inputs (such as a day).",
+  loop: "A pipeline that runs until it is stopped. Every so often it continues as a new run, so its history stays short; here those runs count as one.",
+  signal: "Input from outside for a run in progress, such as an approval or a file that arrived. The run waits, holding no worker, until it comes or the wait times out.",
   step: "One function call in a pipeline that does real work: reads, computes, writes. What it writes is saved as a new version of a dataset.",
   reused:
     "moksha remembers what each step produced, with the inputs and code that produced it. When a step comes again with the same inputs and the same code, it reuses that instead of running again.",

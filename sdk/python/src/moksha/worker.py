@@ -98,6 +98,10 @@ def build_id() -> str:
     for name in sorted(_model.PIPELINES):
         d = _model.PIPELINES[name]
         h.update(f"run {name} {d.code_version()} {d.schedule!r} {d.subscribe!r} {d.title!r} {d.description!r}\n".encode())
+        if d.loops():  # only then, so other projects keep their build IDs
+            h.update(f"loop {name}\n".encode())
+        if d.group:  # likewise
+            h.update(f"group {name} {d.group!r}\n".encode())
     for name in sorted(_model.STEPS):
         d = _model.STEPS[name]
         h.update(f"step {name} {d.code_version()} {d.memo!r} {d.output!r} {d.timeout!r} {d.retry!r} {d.queue!r}\n".encode())
@@ -368,10 +372,18 @@ def registration(build: str) -> dict[str, Any]:
         if keep and keep.age:
             r["keepFor"] = _replay._duration(keep.age)
         retention.append(r)
+    info = []
+    for name, d in sorted(_model.PIPELINES.items()):
+        i: dict[str, Any] = {"pipeline": name, "title": d.title, "description": d.description}
+        if d.loops():
+            i["loops"] = True
+        if d.group:
+            i["group"] = d.group
+        if d.title or d.description or "loops" in i or "group" in i:
+            info.append(i)
     return {"buildId": build, "pipelines": sorted(_model.PIPELINES), "stepVersions": versions,
             "schedules": schedules, "subscriptions": subscriptions, "datasets": retention,
-            "pipelineInfo": [{"pipeline": n, "title": d.title, "description": d.description}
-                             for n, d in sorted(_model.PIPELINES.items()) if d.title or d.description]}
+            "pipelineInfo": info}
 
 
 def print_versions() -> None:

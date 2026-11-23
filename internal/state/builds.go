@@ -28,8 +28,8 @@ func (t *Tx) PutBuild(v Build) error {
 	}
 	for _, run := range v.Pipelines {
 		info := v.Info[run]
-		if err := t.exec(`INSERT INTO build_pipelines (build_id, run, title, description) VALUES (?, ?, ?, ?)
-			ON CONFLICT (build_id, run) DO NOTHING`, v.ID, run, info.Title, info.Description); err != nil {
+		if err := t.exec(`INSERT INTO build_pipelines (build_id, run, title, description, loops, group_name) VALUES (?, ?, ?, ?, ?, ?)
+			ON CONFLICT (build_id, run) DO NOTHING`, v.ID, run, info.Title, info.Description, info.Loops, info.Group); err != nil {
 			return err
 		}
 	}
@@ -47,7 +47,24 @@ func (t *Tx) PutBuild(v Build) error {
 type RunInfo struct {
 	Title       string `json:"title,omitempty"`
 	Description string `json:"description,omitempty"`
+	Loops       bool   `json:"loops,omitempty"` // it can continue as new
+	Group       string `json:"group,omitempty"` // where the Pipelines page lists it
 }
+
+// pipelinesSQL is every pipeline as the newest build that defines it has
+// it, and whether it is a loop.
+const pipelinesSQL = `
+	SELECT bh.run, bh.title, bh.description, bh.group_name,
+		bh.loops OR EXISTS (
+			SELECT 1 FROM runs r
+			WHERE r.name = bh.run AND r.status = 'continued' AND r.created_at >= b.registered_at) AS loops
+	FROM build_pipelines bh JOIN builds b ON b.id = bh.build_id
+	WHERE (b.registered_at, b.id) = (
+		SELECT b2.registered_at, b2.id FROM build_pipelines bh2 JOIN builds b2 ON b2.id = bh2.build_id
+		WHERE bh2.run = bh.run ORDER BY b2.registered_at DESC, b2.id DESC LIMIT 1)`
+
+// loopNamesSQL is the names of the loops.
+const loopNamesSQL = `SELECT run FROM (` + pipelinesSQL + `) WHERE loops`
 
 // Pipeline is a pipeline as the newest build that defines it describes it.
 type Pipeline struct {
@@ -59,13 +76,9 @@ type Pipeline struct {
 func (s *Store) ListPipelines(ctx context.Context) ([]Pipeline, error) {
 	return queryAll(ctx, s.r, func(sc interface{ Scan(...any) error }) (Pipeline, error) {
 		var p Pipeline
-		err := sc.Scan(&p.Name, &p.Title, &p.Description)
+		err := sc.Scan(&p.Name, &p.Title, &p.Description, &p.Group, &p.Loops)
 		return p, err
-	}, `SELECT bh.run, bh.title, bh.description FROM build_pipelines bh JOIN builds b ON b.id = bh.build_id
-		WHERE (b.registered_at, b.id) = (
-			SELECT b2.registered_at, b2.id FROM build_pipelines bh2 JOIN builds b2 ON b2.id = bh2.build_id
-			WHERE bh2.run = bh.run ORDER BY b2.registered_at DESC, b2.id DESC LIMIT 1)
-		ORDER BY bh.run`)
+	}, pipelinesSQL+` ORDER BY bh.run`)
 }
 
 // LoadBuilds reads every build, for a new leader.

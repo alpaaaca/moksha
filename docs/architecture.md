@@ -98,6 +98,7 @@ they produce.
 | **Worker** | A process in the user's environment that registers pipelines and steps and pulls work from queues. | Worker |
 | **Signal** | External input delivered to a run in progress (`approve`, `file_arrived`). | Signal |
 | **Timer** | A durable sleep or deadline held by the server. | Timer |
+| **Loop** | A pipeline that runs until it is stopped, continuing as new; its chain of runs is told as one. | Long-running workflow |
 | **State** | Small key-value state of a run, rebuilt by every replay from the event log, so it is as durable as the event log. | Workflow variables |
 
 **In front of people** (the SDK, the web UI, the CLI, what `moksha dev`
@@ -308,6 +309,32 @@ run of the same name with those params and a fresh event log, keeping its
 parent link: a waiting parent gets the result of the last run in the
 chain, and `moksha start --wait` follows the chain. Runs that loop use
 it to keep their event logs, and so their replays, short.
+
+Such a pipeline is a **loop**. The SDK finds them in the code (the pipeline,
+or project code it reaches, calls `continue_as_new`; its steps and child
+pipelines don't count) and registers that with the build. For builds that
+don't say, a run that continued since the build registered shows it.
+
+### Three places for three kinds of work
+
+The web UI doesn't list all work as pipelines:
+
+- **Pipelines**, the start page: work that ends. No loops, and a run with
+  nothing to do until a signal comes isn't counted there. Pipelines of
+  one group (`@pipeline(group="shop")`, sent with the build's pipeline
+  info) are one row, opened in place or on the group's page, so many
+  pipelines don't make one long list.
+- **Signals**: what waits for someone or something outside, by signal,
+  answered in place. What loops listen for isn't work waiting for an
+  answer, so it isn't here.
+- **Loops**: what runs until stopped, each chain of runs as one, with the
+  signals it listens for.
+
+The sidebar counts waits and broken loops, so neither goes unseen from the
+start page. Runs stays the record of every run of every kind. The server
+does the split (`ListRuns` `kind`, `Run.signal_waits`): a loop makes a run
+every few minutes and would otherwise push everything else out of the
+newest runs a page loads.
 
 ### Run states
 

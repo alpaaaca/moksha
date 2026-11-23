@@ -74,6 +74,15 @@ def parts(fn: Callable, deps: tuple[str, ...] = (), name: str = "", pipeline: bo
     }
 
 
+def loops(fn: Callable) -> bool:
+    """Whether a pipeline is a loop: its code, or project code it reaches,
+    calls continue_as_new. The steps and child pipelines it calls don't
+    count."""
+    w = _Walker(project_root(_source_file(fn)), steps_by_name=True)
+    w.function(fn, root=True)
+    return "continue_as_new" in w.names
+
+
 def is_project_file(filename: str) -> bool:
     """Code of the project: not the standard library, an installed package
     or moksha itself."""
@@ -92,6 +101,7 @@ class _Walker:
         self.steps_by_name = steps_by_name
         self.code: dict[str, str] = {}
         self.packages: dict[str, str] = {}
+        self.names: set[str] = set()  # every name the project code looks up
         self._seen: set[int] = set()
 
     def _once(self, obj: Any) -> bool:
@@ -119,6 +129,7 @@ class _Walker:
             return
         self.code[f"{f.__module__}:{f.__qualname__}"] = _source_hash(f, strip_decorators=root)
         names = _names(f.__code__)
+        self.names |= names
         for n in names:
             if n.startswith("__") and n.endswith("__"):
                 continue

@@ -1,5 +1,6 @@
 """Runs the integration tests run on a real worker."""
 
+import dataclasses
 import logging
 import random
 import sys
@@ -298,3 +299,32 @@ def chatty(n: int) -> int:
 @mk.pipeline
 def chatter(ctx, n: int):
     return ctx.step(chatty, n)
+
+
+@mk.step(output=mk.Dataset("nested.parts", partition="part"))
+def nested_part(part: str) -> str:
+    (mk.output().path / "part.txt").write_text(part)
+    return part
+
+
+@dataclasses.dataclass
+class NestedBundle:
+    label: str
+    extra: mk.DataVersion
+
+
+@mk.step(output=mk.Dataset("nested.combined"))
+def nested_combine(parts: list, by_name: dict, bundle) -> dict:
+    """Says what it got: data versions passed inside a list, a dict and a
+    dataclass arrive as data versions it can read."""
+    (mk.output().path / "combined.txt").write_text("x")
+    read = lambda v: v.path("part.txt").read_text()  # noqa: E731
+    return {"parts": [read(p) for p in parts], "by_name": {k: read(v) for k, v in by_name.items()},
+            "bundle": [bundle["label"], read(bundle["extra"])]}
+
+
+@mk.pipeline
+def nested_inputs(ctx):
+    a, b, c, d = (ctx.step(nested_part, p) for p in ("a", "b", "c", "d"))
+    out = ctx.step(nested_combine, [a, b], {"x/y": c}, NestedBundle("z", d))
+    return {"id": out.id, "result": out.result}

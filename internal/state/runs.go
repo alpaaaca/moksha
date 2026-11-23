@@ -283,6 +283,12 @@ func (s *Store) LoadRuns(ctx context.Context) (*ActiveRuns, error) {
 	return a, nil
 }
 
+// What ListRuns can narrow runs down to (RunFilter.Kind).
+const (
+	KindPipeline = "pipeline" // runs of pipelines that end
+	KindLoop     = "loop"     // runs of loops
+)
+
 // RunFilter selects runs for ListRuns. Empty fields don't filter.
 type RunFilter struct {
 	Tenant   string
@@ -291,6 +297,7 @@ type RunFilter struct {
 	ParentID string // children of this run
 	BeforeID string // pages backwards: only IDs (ULIDs) lower than this
 	Limit    int    // default 50
+	Kind     string // KindPipeline or KindLoop; empty: both
 }
 
 // ListRuns returns runs newest first.
@@ -310,6 +317,12 @@ func (s *Store) ListRuns(ctx context.Context, f RunFilter) ([]Run, error) {
 	}
 	if f.BeforeID != "" {
 		where, args = append(where, "id < ?"), append(args, f.BeforeID)
+	}
+	switch f.Kind {
+	case KindPipeline:
+		where = append(where, "name NOT IN ("+loopNamesSQL+")")
+	case KindLoop:
+		where = append(where, "name IN ("+loopNamesSQL+")")
 	}
 	if len(f.Statuses) > 0 {
 		where = append(where, "status IN (?"+strings.Repeat(", ?", len(f.Statuses)-1)+")")

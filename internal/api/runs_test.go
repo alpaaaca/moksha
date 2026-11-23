@@ -135,7 +135,7 @@ func TestListPipelines(t *testing.T) {
 		return err
 	}
 	require.NoError(t, register("b1", &mokshav1.PipelineInfo{Pipeline: "daily", Title: "Daily", Description: "old"}))
-	require.NoError(t, register("b2", &mokshav1.PipelineInfo{Pipeline: "daily", Title: "Daily revenue", Description: "Orders to a report."}))
+	require.NoError(t, register("b2", &mokshav1.PipelineInfo{Pipeline: "daily", Title: "Daily revenue", Description: "Orders to a report.", Group: "shop"}))
 	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(register("b3", &mokshav1.PipelineInfo{Pipeline: "weekly", Title: "x"})))
 
 	got, err := runs.ListPipelines(ctx, connect.NewRequest(&mokshav1.ListPipelinesRequest{}))
@@ -144,6 +144,13 @@ func TestListPipelines(t *testing.T) {
 	assert.Equal(t, []string{"daily", "Daily revenue", "Orders to a report."},
 		[]string{got.Msg.Pipelines[0].Name, got.Msg.Pipelines[0].Title, got.Msg.Pipelines[0].Description}, "the newest build decides")
 	assert.Equal(t, []string{"hourly", ""}, []string{got.Msg.Pipelines[1].Name, got.Msg.Pipelines[1].Title})
+	assert.Equal(t, []string{"shop", ""}, []string{got.Msg.Pipelines[0].Group, got.Msg.Pipelines[1].Group})
+
+	// A newer build that drops the group takes it away.
+	require.NoError(t, register("b4", &mokshav1.PipelineInfo{Pipeline: "daily", Title: "Daily revenue"}))
+	got, err = runs.ListPipelines(ctx, connect.NewRequest(&mokshav1.ListPipelinesRequest{}))
+	require.NoError(t, err)
+	assert.Equal(t, "", got.Msg.Pipelines[0].Group)
 }
 
 func TestListRunsAndEventLog(t *testing.T) {
@@ -233,4 +240,69 @@ func TestListCode(t *testing.T) {
 	assert.Equal(t, []string{"load", "py-1", "b1"}, []string{res.Msg.Steps[0].Name, res.Msg.Steps[0].CodeVersion, res.Msg.Steps[0].BuildId})
 	require.Len(t, res.Msg.Pipelines, 1)
 	assert.Equal(t, "daily", res.Msg.Pipelines[0].Name)
+}
+
+func TestLoopsAndSignalWaits(t *testing.T) {
+	s := start(t)
+	mux := http.NewServeMux()
+	path, h := NewRunHandler(s.core, s.store)
+	mux.Handle(path, h)
+	c := mokshav1connect.NewRunServiceClient(http.DefaultClient, httptestServer(t, mux))
+	// watch says it loops; old is of an SDK that doesn't say.
+	_, err := s.client.RegisterBuild(ctx, connect.NewRequest(&mokshav1.RegisterBuildRequest{
+		BuildId: "b1", Pipelines: []string{"daily", "old", "watch"},
+		PipelineInfo: []*mokshav1.PipelineInfo{{Pipeline: "watch", Loops: true}}}))
+	require.NoError(t, err)
+
+	loops := func() []string {
+		res, err := c.ListPipelines(ctx, connect.NewRequest(&mokshav1.ListPipelinesRequest{}))
+		require.NoError(t, err)
+		var out []string
+		for _, p := range res.Msg.Pipelines {
+			if p.Loops {
+				out = append(out, p.Name)
+			}
+		}
+		return out
+	}
+	names := func(kind string) []string {
+		res, err := c.ListRuns(ctx, connect.NewRequest(&mokshav1.ListRunsRequest{Kind: kind}))
+		require.NoError(t, err)
+		var out []string
+		for _, r := range res.Msg.Runs {
+			out = append(out, r.Name)
+		}
+		return out
+	}
+	startRun := func(name string) string {
+		res, err := c.StartRun(ctx, connect.NewRequest(&mokshav1.StartRunRequest{Tenant: "t", Name: name}))
+		require.NoError(t, err)
+		return res.Msg.RunId
+	}
+	replay := func(cmds []core.Command, outcome *core.RunOutcome) {
+		task, ok, err := s.core.Poll(ctx, core.PollRequest{WorkerID: "w", Queues: []string{core.DefaultQueue},
+			Kinds: []core.TaskKind{core.TaskRun}, Wait: time.Second})
+		require.NoError(t, err)
+		require.True(t, ok)
+		require.NoError(t, s.core.CompleteRunTask(ctx, core.RunTaskResult{TaskID: task.ID, BuildID: "b1", Commands: cmds, Outcome: outcome}))
+	}
+	assert.Equal(t, []string{"watch"}, loops(), "its build says so, before it ever ran")
+
+	waiting := startRun("daily")
+	replay([]core.Command{{Seq: 1, Kind: core.CommandWaitSignal, Name: "approve", Duration: time.Hour}}, nil)
+	got, err := c.GetRun(ctx, connect.NewRequest(&mokshav1.GetRunRequest{RunId: waiting}))
+	require.NoError(t, err)
+	require.Len(t, got.Msg.Run.SignalWaits, 1)
+	assert.Equal(t, "approve", got.Msg.Run.SignalWaits[0].Name)
+	assert.NotNil(t, got.Msg.Run.SignalWaits[0].TimesOutAt)
+
+	startRun("old")
+	assert.ElementsMatch(t, []string{"daily", "old"}, names("pipeline"))
+	replay(nil, &core.RunOutcome{Status: state.RunContinued})
+	assert.Equal(t, []string{"old", "watch"}, loops(), "it continued as new")
+	assert.Equal(t, []string{"old", "old"}, names("loop"))
+	assert.Equal(t, []string{"daily"}, names("pipeline"))
+
+	_, err = c.ListRuns(ctx, connect.NewRequest(&mokshav1.ListRunsRequest{Kind: "signal"}))
+	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 }

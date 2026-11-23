@@ -218,6 +218,7 @@ class PipelineDef:
     subscribe: Subscription | None = None
     title: str = ""  # for people: the web UI shows it in place of the name
     description: str = ""
+    group: str = ""  # for people: the web UI's Pipelines page lists it under this group
 
     @functools.cached_property
     def _computed_version(self) -> str:
@@ -230,6 +231,11 @@ class PipelineDef:
         build ID, so fixed pipeline code is a new build (which resumes stuck
         runs)."""
         return self._computed_version
+
+    def loops(self) -> bool:
+        from . import _codeversion
+
+        return _codeversion.loops(self.fn)
 
 
 @dataclass
@@ -270,7 +276,7 @@ def _register(registry: dict, d) -> None:
 
 def pipeline(fn: Callable | None = None, *, name: str | None = None, title: str | None = None,
              queue: str | None = None, max_parallel: int | None = None, schedule: Schedule | str | None = None,
-             subscribe: Subscription | str | list | None = None):
+             subscribe: Subscription | str | list | None = None, group: str | None = None):
     """Mark a function as a pipeline: the code that decides which steps run,
     called as fn(ctx, **inputs). Each run of it survives crashes and
     restarts: moksha replays the function against what the run already
@@ -283,17 +289,20 @@ def pipeline(fn: Callable | None = None, *, name: str | None = None, title: str 
     new data versions in those datasets start it: it takes a `versions`
     input (a list of moksha.DataVersion). title ("Daily revenue") is what
     the web UI calls it; without one, the docstring's first line is; the
-    rest of the docstring describes it."""
+    rest of the docstring describes it. group ("shop") is where the web
+    UI's Pipelines page lists it: pipelines of one group are one row there,
+    opened to show them. Like title, it is only for people."""
     if max_parallel is not None and (not isinstance(max_parallel, int) or max_parallel < 1):
         raise ValueError(f"pipeline: max_parallel must be a positive integer, got {max_parallel!r}")
     if isinstance(schedule, str):
         schedule = Schedule(schedule)
     if subscribe is not None and not isinstance(subscribe, Subscription):
         subscribe = Subscription(subscribe)
+    group = _group(f"pipeline {name or '<function>'}", group)
 
     def wrap(f: Callable) -> Callable:
         d = PipelineDef(name=name or f.__name__, fn=f, queue=queue, max_parallel=max_parallel, schedule=schedule,
-                    subscribe=subscribe, **_describe(f, title))
+                    subscribe=subscribe, group=group, **_describe(f, title))
         takes = inspect.signature(f).parameters
         if subscribe is not None and "versions" not in takes:
             raise ValueError(f"pipeline {d.name}: a subscribed pipeline takes a `versions` input "
@@ -307,6 +316,15 @@ def pipeline(fn: Callable | None = None, *, name: str | None = None, title: str 
     return wrap(fn) if fn is not None else wrap
 
 
+
+
+def _group(who: str, group: str | None) -> str:
+    """A pipeline's group=: a name on one line, trimmed; "" for none."""
+    if group is None:
+        return ""
+    if not isinstance(group, str) or not group.strip() or "\n" in group or len(group) > 100:
+        raise ValueError(f"{who}: group must be a name on one line (up to 100 characters), got {group!r}")
+    return group.strip()
 
 
 def _describe(f: Callable, title: str | None) -> dict[str, str]:

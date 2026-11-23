@@ -85,8 +85,14 @@ func (s *RunServer) ListRuns(ctx context.Context, req *connect.Request[mokshav1.
 	if m.WithSteps && limit > 200 {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("limit %d: at most 200 with steps", limit))
 	}
+	switch m.Kind {
+	case "", state.KindPipeline, state.KindLoop:
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("kind %q: want %q or %q", m.Kind, state.KindPipeline, state.KindLoop))
+	}
 	runs, err := s.store.ListRuns(ctx, state.RunFilter{Tenant: m.Tenant, Name: m.Name, Statuses: m.Statuses,
-		ParentID: m.ParentId, BeforeID: m.BeforeId, Limit: limit})
+		ParentID: m.ParentId, BeforeID: m.BeforeId, Limit: limit, Kind: m.Kind})
 	if err != nil {
 		return nil, connectError(err)
 	}
@@ -328,7 +334,7 @@ func (s *RunServer) ListPipelines(ctx context.Context, _ *connect.Request[moksha
 	}
 	out := &mokshav1.ListPipelinesResponse{}
 	for _, p := range ps {
-		out.Pipelines = append(out.Pipelines, &mokshav1.Pipeline{Name: p.Name, Title: p.Title, Description: p.Description})
+		out.Pipelines = append(out.Pipelines, &mokshav1.Pipeline{Name: p.Name, Title: p.Title, Description: p.Description, Loops: p.Loops, Group: p.Group})
 	}
 	return connect.NewResponse(out), nil
 }

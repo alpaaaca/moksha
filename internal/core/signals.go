@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
+	"time"
 
 	"github.com/alper/moksha/internal/state"
 )
@@ -160,4 +162,33 @@ func restoreSignals(h *runState, evs []state.Event) error {
 		}
 	}
 	return nil
+}
+
+// SignalWait is a wait_signal command that nothing answered yet.
+type SignalWait struct {
+	Seq        int
+	Name       string
+	TimesOutAt time.Time // zero: no timeout
+}
+
+// SignalWaits returns what those of runIDs that are open wait for, by run,
+// each run's in the order it asked.
+func (c *Core) SignalWaits(ctx context.Context, runIDs []string) (map[string][]SignalWait, error) {
+	return submit(ctx, c, func(c *Core) (map[string][]SignalWait, error) {
+		out := map[string][]SignalWait{}
+		for _, id := range runIDs {
+			h := c.runs[id]
+			if h == nil {
+				continue
+			}
+			for _, seq := range slices.Sorted(maps.Keys(h.waits)) {
+				w := SignalWait{Seq: seq, Name: h.waits[seq].name}
+				if tm := h.timers[seq]; tm != nil {
+					w.TimesOutAt = tm.rec.FireAt
+				}
+				out[id] = append(out[id], w)
+			}
+		}
+		return out, nil
+	})
 }

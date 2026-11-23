@@ -39,7 +39,7 @@ export function Pipeline({ run, tab }: { run: string; tab: PipelineTab }) {
 
   return (
     <section>
-      <Crumbs items={[{ label: "Pipelines", to: { name: "runs" } }, { label: pipelines.title(run) }]} />
+      <Crumbs items={[...pipelines.trail(run), { label: pipelines.title(run) }]} />
       <div className="page-head">
         <h1>{pipelines.title(run)}</h1>
         {s && <Status status={s.last.status} />}

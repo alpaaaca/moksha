@@ -53,7 +53,7 @@ export function RunDetail({ id, step }: { id: string; step?: number }) {
     <section>
       <Crumbs
         items={[
-          { label: "Pipelines", to: { name: "runs" } },
+          ...pipelines.trail(h.name),
           { label: pipelines.title(h.name), to: { name: "pipeline", run: h.name } },
           { label: inputsText(h) },
         ]}
