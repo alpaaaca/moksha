@@ -4,23 +4,23 @@ import { broken, useLoopRuns, type Chain, type Loop } from "../loops";
 import { usePipelines, type Pipelines } from "../pipelines";
 import { Link } from "../router";
 import { Hint } from "../words";
+import { GroupHead } from "./RunList";
 import { SendSignal } from "./SendSignal";
 
 // Loops: the pipelines that run until stopped, each chain of runs told as
 // the one long-living thing it is.
-export function Loops() {
+export function Loops({ group }: { group: string }) {
   const pipelines = usePipelines();
   const { loaded, loops, error, reload } = useLoopRuns();
-  const all = loops(pipelines.loops);
+  const all = loops(pipelines.loops.filter((n) => pipelines.group(n) === group));
   const ready = loaded && pipelines.loaded;
 
   return (
     <section>
-      <div className="page-head">
-        <h1>Loops</h1>
-        <Hint word="loop" />
-      </div>
-      <p className="lede">What keeps running until it is stopped.</p>
+      <GroupHead group={group} page="Loops" pipelines={pipelines} />
+      <p className="lede">
+        What keeps running until it is stopped. <Hint word="loop" />
+      </p>
       {error && <p className="error">{error}</p>}
       {!ready && !error && <p className="dim">loading…</p>}
       {ready && all.length === 0 && (

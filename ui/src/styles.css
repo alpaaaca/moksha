@@ -426,23 +426,10 @@ p.loop-rest { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; ma
   .nav-count { margin-left: 0; }
 }
 
-/* Pipelines of one group: a row that opens in place (the start page). */
-/* The start page's rows, groups and pipelines alike: one line each. */
+/* A group's pipelines: one line each. */
 .pipelines tbody td { padding-top: 7px; padding-bottom: 7px; white-space: nowrap; vertical-align: middle; }
 .pipelines tbody .recent { height: 18px; }
-.pipelines tr.group-row td { background: color-mix(in srgb, var(--fg) 2.5%, transparent); }
-.group-count { display: inline-block; min-width: 16px; margin: 0 8px 0 6px; padding: 0 5px; border-radius: 999px; font: 600 11px/16px var(--mono); text-align: center; color: var(--dim); background: color-mix(in srgb, var(--fg) 8%, transparent); }
 .group-last { display: inline-flex; align-items: center; gap: 6px; }
-.pipelines tr.group-row svg { vertical-align: -2px; color: var(--dim); }
-.group-toggle { all: unset; display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 4px; border-radius: 5px; cursor: pointer; vertical-align: -4px; }
-.group-toggle:hover { background: color-mix(in srgb, var(--fg) 8%, transparent); }
-.group-toggle:focus-visible { outline: 2px solid var(--accent); }
-.group-toggle svg { transition: transform 0.15s; }
-tbody.group.open .group-toggle svg { transform: rotate(90deg); }
-.pipelines tr.in-group td:first-child { padding-left: 52px; }
-.pipelines tbody.group.open tr:last-child td { border-bottom: 1px solid var(--line-strong); }
-.stat-sub { font: 500 13px var(--sans, inherit); color: var(--dim); }
-@media (prefers-reduced-motion: reduce) { .group-toggle svg { transition: none; } }
 
 /* Start a run: its inputs in a JSON editor. */
 .start-form { max-width: 720px; margin: 8px 0 16px; }
@@ -465,3 +452,98 @@ tbody.group.open .group-toggle svg { transform: rotate(90deg); }
   font: 13px/1.6 var(--mono); color: var(--fg); background: transparent; white-space: pre; overflow: auto;
 }
 .start-foot button[type="submit"]:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* The sidebar in a group: a way back, the group, its three places. */
+.sidenav .nav-back { gap: 7px; padding: 4px 8px; font-size: 12px; color: var(--faint); }
+.sidenav .nav-back:hover { color: var(--fg); background: none; }
+.nav-project {
+  display: flex; align-items: center; gap: 8px; margin: 6px 0 4px; padding: 6px 8px; border-radius: 7px;
+  font-weight: 650; color: var(--fg); background: color-mix(in srgb, var(--fg) 4%, transparent); box-shadow: inset 0 0 0 1px var(--line);
+}
+.nav-project svg { flex: none; color: var(--accent); }
+.nav-project span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.group-tag {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px 2px 7px; border-radius: 999px;
+  font: 500 12px var(--mono); color: var(--fg); background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.group-tag svg { color: var(--accent); }
+
+/* Home: the groups, a card each, and what needs you first. */
+.tone-bad { --tone: var(--bad); }
+.tone-warn { --tone: var(--warn); }
+.tone-run { --tone: var(--run); }
+.tone-quiet { --tone: var(--faint); }
+.attention { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
+.attention-chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 10px; border-radius: 999px; color: var(--fg); font-size: 12.5px;
+  background: color-mix(in srgb, var(--tone) 10%, var(--panel)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone) 35%, transparent);
+}
+.attention-chip:hover { text-decoration: none; background: color-mix(in srgb, var(--tone) 16%, var(--panel)); }
+.attention-chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.attention-chip svg { color: var(--tone); transition: transform 0.15s; }
+.attention-chip:hover svg { transform: translateX(2px); }
+
+.projects { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); gap: 16px; margin: 22px 0 0; padding: 0; list-style: none; }
+.project-card {
+  --tone: var(--faint);
+  position: relative; display: flex; flex-direction: column; gap: 16px; min-width: 0; padding: 18px 18px 16px 22px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+/* Its edge says how it is: a rail in the project's tone. */
+.project-card::before {
+  content: ""; position: absolute; left: 0; top: 14px; bottom: 14px; width: 3px; border-radius: 0 3px 3px 0; background: var(--tone);
+}
+.project-card.tone-quiet::before { background: var(--line-strong); }
+.project-card:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+.project-card.tone-bad { border-color: color-mix(in srgb, var(--bad) 30%, var(--line)); }
+.project-card.tone-warn { border-color: color-mix(in srgb, var(--warn) 28%, var(--line)); }
+.project-top { display: flex; align-items: flex-start; gap: 12px; }
+.project-mark {
+  flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+.project-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.project-name { color: var(--fg); font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.project-name:hover { text-decoration: none; color: var(--accent); }
+.project-where { display: inline-block; max-width: 220px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; vertical-align: bottom; }
+.project-state { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; font-size: 12px; font-weight: 500; color: var(--tone); }
+.project-card.tone-quiet .project-state { color: var(--dim); }
+.project-state .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.project-card.busy .project-state .dot { animation: pulse 1.6s ease-out infinite; }
+.project-pulse { display: flex; align-items: flex-end; gap: 12px; min-height: 26px; }
+.project-pulse > .dim { margin-left: auto; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* The doors: three ways into the project's work, joined by a line that
+   flows while something in it runs. */
+.doors { display: grid; grid-template-columns: 1fr 18px 1fr 18px 1fr; align-items: stretch; }
+.door-link { align-self: center; height: 2px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 4px, transparent 4px 8px); }
+.project-card.busy .door-link {
+  background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--run) 70%, transparent) 0 4px, transparent 4px 8px) 0 0 / 16px 2px;
+  animation: door-flow 0.8s linear infinite;
+}
+@keyframes door-flow { to { background-position: 16px 0; } }
+.door {
+  --tone: var(--faint);
+  display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; border-radius: 10px; color: var(--fg);
+  background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow 0.15s, background 0.15s;
+}
+.door:hover { text-decoration: none; background: color-mix(in srgb, var(--accent) 7%, var(--bg)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.door-head { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--dim); }
+.door-head svg:first-child { color: var(--tone); }
+.door.tone-quiet .door-head svg:first-child { color: var(--dim); }
+.door-head svg:last-child { margin-left: auto; color: var(--accent); opacity: 0; transform: translateX(-4px); transition: opacity 0.15s, transform 0.15s; }
+.door:hover .door-head svg:last-child, .door:focus-visible .door-head svg:last-child { opacity: 1; transform: none; }
+.door-count { font: 600 22px/1.25 var(--mono); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.door.tone-bad .door-count, .door.tone-warn .door-count, .door.tone-run .door-count { color: var(--tone); }
+.door-sub { overflow: hidden; font-size: 12px; color: var(--dim); white-space: nowrap; text-overflow: ellipsis; }
+.door.tone-bad .door-sub, .door.tone-warn .door-sub { color: var(--tone); }
+@media (max-width: 560px) {
+  .doors { grid-template-columns: 1fr; gap: 6px; }
+  .door-link { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-card, .door, .attention-chip svg { transition: none; }
+  .project-card.busy .door-link, .project-card.busy .project-state .dot { animation: none; }
+}

@@ -4,7 +4,7 @@ import { useApi } from "../api";
 import { ago, inputsText } from "../format";
 import { usePoll } from "../hooks";
 import { Icon } from "../icons";
-import { usePipelines } from "../pipelines";
+import { groupLabel, usePipelines } from "../pipelines";
 import { navigate, type Route } from "../router";
 
 type Item = { key: string; group: string; label: string; hint: string; icon: string; to: Route };
@@ -23,19 +23,19 @@ export function Palette({ onClose }: { onClose: () => void }) {
 
   const items = useMemo(() => {
     const all: Item[] = [
-      { key: "p:runs", group: "Pages", label: "Pipelines", hint: "", icon: "pipelines", to: { name: "runs" } },
-      { key: "p:signals", group: "Pages", label: "Signals", hint: "", icon: "signals", to: { name: "signals" } },
-      { key: "p:loops", group: "Pages", label: "Loops", hint: "", icon: "loops", to: { name: "loops" } },
-      { key: "p:activity", group: "Pages", label: "Runs", hint: "", icon: "runs", to: { name: "activity" } },
+      { key: "p:home", group: "Pages", label: "Groups", hint: "", icon: "group", to: { name: "home" } },
+      { key: "p:activity", group: "Pages", label: "Runs", hint: "every group's", icon: "runs", to: { name: "activity" } },
       { key: "p:workers", group: "Pages", label: "Workers", hint: "", icon: "workers", to: { name: "workers" } },
-      ...[...new Set(pipelines.names.map((n) => pipelines.info(n)?.group).filter((g): g is string => !!g))].sort().map((g) => ({
-        key: `g:${g}`, group: "Groups", label: g, hint: "group of pipelines", icon: "group", to: { name: "group" as const, group: g },
-      })),
+      ...pipelines.groups.flatMap((g) => [
+        { key: `gr:${g.name}`, group: "Groups", label: groupLabel(g.name), hint: "pipelines", icon: "group", to: { name: "runs" as const, group: g.name } },
+        { key: `gs:${g.name}`, group: "Groups", label: `${groupLabel(g.name)} · Signals`, hint: "", icon: "signals", to: { name: "signals" as const, group: g.name } },
+        { key: `gl:${g.name}`, group: "Groups", label: `${groupLabel(g.name)} · Loops`, hint: "", icon: "loops", to: { name: "loops" as const, group: g.name } },
+      ]),
       ...pipelines.names.map((n) => ({
-        key: `pl:${n}`, group: "Pipelines", label: pipelines.title(n), hint: [pipelines.info(n)?.group, n].filter(Boolean).join(" / "), icon: "pipelines", to: { name: "pipeline" as const, run: n },
+        key: `pl:${n}`, group: "Pipelines", label: pipelines.title(n), hint: `${groupLabel(pipelines.group(n))} / ${n}`, icon: "pipelines", to: { name: "pipeline" as const, run: n },
       })),
       ...pipelines.loops.map((n) => ({
-        key: `lp:${n}`, group: "Loops", label: pipelines.title(n), hint: n, icon: "loops", to: { name: "pipeline" as const, run: n },
+        key: `lp:${n}`, group: "Loops", label: pipelines.title(n), hint: `${groupLabel(pipelines.group(n))} / ${n}`, icon: "loops", to: { name: "pipeline" as const, run: n },
       })),
       ...(recent.data?.runs ?? []).map((h) => ({
         key: `r:${h.id}`, group: "Recent runs", label: `${pipelines.title(h.name)} · ${inputsText(h)}`, hint: `${h.status} · ${ago(h.createdAt)}`,

@@ -6,6 +6,7 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import { createContext, useContext, type ReactNode } from "react";
 
 import { CatalogService } from "./gen/moksha/v1/catalog_pb";
+import { DeployService } from "./gen/moksha/v1/deploy_pb";
 import { RunService } from "./gen/moksha/v1/run_pb";
 import { LogService } from "./gen/moksha/v1/log_pb";
 
@@ -13,6 +14,7 @@ export type Api = {
   runs: Client<typeof RunService>;
   catalog: Client<typeof CatalogService>;
   logs: Client<typeof LogService>;
+  deploy: Client<typeof DeployService>;
 };
 
 export function apiFor(transport: Transport): Api {
@@ -20,6 +22,7 @@ export function apiFor(transport: Transport): Api {
     runs: createClient(RunService, transport),
     catalog: createClient(CatalogService, transport),
     logs: createClient(LogService, transport),
+    deploy: createClient(DeployService, transport),
   };
 }
 
