@@ -315,23 +315,31 @@ or project code it reaches, calls `continue_as_new`; its steps and child
 pipelines don't count) and registers that with the build. For builds that
 don't say, a run that continued since the build registered shows it.
 
-### Three places for three kinds of work
+### Groups first, then three places for three kinds of work
 
-The web UI doesn't list all work as pipelines:
+The web UI's start page is the groups (`@pipeline(group="shop")`, sent
+with the build's pipeline info), a card each: what goes on in the group
+now (failing, waiting on you, at work, quiet), its latest runs, and a door
+into each of its three places, which pass straight to that work. What
+needs someone first is a link above the cards. Which project deployed a
+group's pipelines is a detail on its card: a project is what gets deployed
+and scaled, a group is how people find their work, and one project can
+hold several. Pipelines that name no group are a group of their own, "Not
+in a group" (`#/groups/~`). Runs and Workers are apart from any group.
 
-- **Pipelines**, the start page: work that ends. No loops, and a run with
-  nothing to do until a signal comes isn't counted there. Pipelines of
-  one group (`@pipeline(group="shop")`, sent with the build's pipeline
-  info) are one row, opened in place or on the group's page, so many
-  pipelines don't make one long list.
+In a group, the web UI doesn't list all work as pipelines:
+
+- **Pipelines**: work that ends. No loops, and a run with
+  nothing to do until a signal comes isn't counted there.
 - **Signals**: what waits for someone or something outside, by signal,
   answered in place. What loops listen for isn't work waiting for an
   answer, so it isn't here.
 - **Loops**: what runs until stopped, each chain of runs as one, with the
   signals it listens for.
 
-The sidebar counts waits and broken loops, so neither goes unseen from the
-start page. Runs stays the record of every run of every kind. The server
+The sidebar, in a group (on its pages and its pipelines' and runs'),
+counts its waits and broken loops, so neither goes unseen from its
+Pipelines page. Runs stays the record of every run of every kind. The server
 does the split (`ListRuns` `kind`, `Run.signal_waits`): a loop makes a run
 every few minutes and would otherwise push everything else out of the
 newest runs a page loads.

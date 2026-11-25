@@ -9,6 +9,7 @@ import { App } from "./App";
 import { href, parse } from "./router";
 import { RunSchema, RunService, StepCountsSchema, StepSchema } from "./gen/moksha/v1/run_pb";
 import { LogService } from "./gen/moksha/v1/log_pb";
+import { DeployService } from "./gen/moksha/v1/deploy_pb";
 
 const start = new Date(2026, 9, 24, 3, 0, 0);
 const at = (seconds: number) => timestampFromDate(new Date(start.getTime() + seconds * 1000));
@@ -19,7 +20,8 @@ function run(id: string, name: string, status: string, extra: MessageInitShape<t
 }
 
 // Runs and loops to serve in place of the usual ones.
-type World = { runs: ReturnType<typeof run>[]; loops: string[]; groups?: Record<string, string> };
+// groups: each pipeline's group (none: in no group); projects: each deployed project's pipelines.
+type World = { runs: ReturnType<typeof run>[]; loops: string[]; groups?: Record<string, string>; projects?: Record<string, string[]> };
 
 // A RunService in memory, recording what the UI asked.
 function fakeServer(world?: World) {
@@ -139,7 +141,7 @@ function fakeServer(world?: World) {
           const names = new Set([...world.runs.map((h) => h.name), ...world.loops]);
           return { pipelines: [...names].map((name) => ({ name, loops: world.loops.includes(name), group: world.groups?.[name] ?? "" })) };
         }
-        return { pipelines: [{ name: "daily", title: "Daily revenue", description: "Orders to a report, per day." }, { name: "hourly" }] };
+        return { pipelines: [{ name: "daily", title: "Daily revenue", description: "Orders to a report, per day.", group: "revenue" }, { name: "hourly", group: "revenue" }] };
       },
       listSchedules() {
         const next = timestampFromDate(new Date(Date.now() + 5 * 3600 * 1000));
@@ -150,6 +152,17 @@ function fakeServer(world?: World) {
             { pipeline: "nightly", cron: "5 * * * *", interval: "hourly", nextRun: next, latestParamsJson: latest },
           ],
           subscriptions: [],
+        };
+      },
+    });
+    service(DeployService, {
+      listProjects() {
+        record("listProjects", {});
+        const projects = world ? (world.projects ?? {}) : { revenue: ["daily", "hourly"] };
+        return {
+          projects: Object.entries(projects).map(([project, pipelines], i) => ({
+            project, version: i + 3, buildId: `b-${project}`, dir: `/src/${project}`, pipelines, by: "ana", deployedAt: t0,
+          })),
         };
       },
     });
@@ -174,8 +187,8 @@ function show(hash: string, world?: World) {
   return server;
 }
 
-test("the start page: each pipeline's meta information, not its runs", async () => {
-  show("#/runs");
+test("a group's Pipelines page: each pipeline's meta information, not its runs", async () => {
+  show("#/groups/revenue");
   const table = await screen.findByRole("table");
   const daily = (await within(table).findByRole("link", { name: "Daily revenue" })).closest("tr")!;
   expect(daily).toHaveAttribute("title", "Orders to a report, per day."); // one line: the description on hover
@@ -202,7 +215,7 @@ test("the start page: each pipeline's meta information, not its runs", async () 
 test("a pipeline: its recent runs told by their data", async () => {
   const { calls } = show("#/pipelines/daily");
   expect(await screen.findByRole("heading", { name: "Daily revenue" })).toBeInTheDocument();
-  expect(screen.getByRole("navigation", { name: "breadcrumb" })).toHaveTextContent("PipelinesDaily revenue");
+  expect(screen.getByRole("navigation", { name: "breadcrumb" })).toHaveTextContent("GroupsrevenueDaily revenue");
   expect(screen.getByText(/on a schedule/)).toHaveTextContent("0 3 * * * (Europe/Berlin), daily data");
   expect(screen.getByText("next run").nextElementSibling).toHaveTextContent("in 5 h");
 
@@ -421,12 +434,17 @@ test("pipeline tabs have their own URLs; the overview's is the pipeline's", () =
 });
 
 test("the sidebar moves between pages; the palette (⌘K) finds a pipeline or run", async () => {
-  show("#/runs");
+  show("#/groups/revenue");
   const nav = screen.getByRole("navigation", { name: "main" });
-  expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Pipelines", "Signals", "Loops", "Runs", "Workers"]);
+  // In a group: a way back, the group, its three places, then what is apart from groups.
+  expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["All groups", "Pipelines", "Signals", "Loops", "Runs", "Workers"]);
+  expect(nav).toHaveTextContent("revenue");
   expect(within(nav).getByRole("link", { name: "Pipelines" })).toHaveClass("active");
+  expect(within(nav).getByRole("link", { name: "Signals" })).toHaveAttribute("href", "#/groups/revenue/signals");
   await userEvent.click(within(nav).getByRole("link", { name: "Runs" }));
   await waitFor(() => expect(window.location.hash).toBe("#/activity"));
+  // Apart from any group: only the groups, the runs, the workers.
+  await waitFor(() => expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Groups", "Runs", "Workers"]));
   expect(await screen.findByRole("heading", { name: "Runs" })).toBeInTheDocument();
   expect(await screen.findByText("hourly")).toBeInTheDocument(); // every pipeline's runs
 
@@ -495,7 +513,7 @@ function threeKinds(): World {
 }
 
 test("the Pipelines page has neither loops nor runs parked on a signal", async () => {
-  show("#/runs", threeKinds());
+  show("#/groups/~", threeKinds());
   const table = await screen.findByRole("table");
   expect(within(table).getAllByRole("row").slice(1).map((r) => r.querySelector("a")!.textContent)).toEqual(["close", "gate", "mixed"]);
   expect(within(table).queryByText("watch")).not.toBeInTheDocument();
@@ -508,7 +526,7 @@ test("the Pipelines page has neither loops nor runs parked on a signal", async (
 });
 
 test("Signals: what waits, by signal, answered in place; not what loops listen for", async () => {
-  const { calls } = show("#/signals", threeKinds());
+  const { calls } = show("#/groups/~/signals", threeKinds());
   const approve = await screen.findByRole("region", { name: "signal approve" });
   expect(approve).toHaveTextContent("2026-10-26");
   expect(approve).toHaveTextContent("waits as long as it takes");
@@ -530,7 +548,7 @@ test("Signals: what waits, by signal, answered in place; not what loops listen f
 });
 
 test("Loops: a chain of runs as one, signalled in the run it is in now", async () => {
-  const { calls } = show("#/loops", threeKinds());
+  const { calls } = show("#/groups/~/loops", threeKinds());
   const watch = await screen.findByRole("listitem", { name: "loop watch" });
   expect(within(watch).getByText("runs so far").nextElementSibling).toHaveTextContent(/^2$/);
   expect(screen.getByRole("listitem", { name: "loop idle" })).toHaveTextContent("never started");
@@ -542,7 +560,7 @@ test("Loops: a chain of runs as one, signalled in the run it is in now", async (
 test("a loop whose start is older than the runs loaded says at least", async () => {
   const world = threeKinds();
   world.runs = world.runs.filter((h) => h.status !== "continued");
-  show("#/loops", world);
+  show("#/groups/~/loops", world);
   const watch = await screen.findByRole("listitem", { name: "loop watch" });
   expect(within(watch).getByText("runs so far").nextElementSibling).toHaveTextContent("at least 1");
 });
@@ -556,8 +574,9 @@ test("a loop's own page belongs under Loops", async () => {
 
 function grouped(): World {
   return {
-    loops: [],
-    groups: { close: "shop", month: "shop", rates: "finance" },
+    loops: ["watch"],
+    groups: { close: "shop", month: "shop", watch: "shop", rates: "finance" },
+    projects: { books: ["close", "month", "watch", "rates", "alone"] },
     runs: [
       run("01M8CLOSEDCLOSEDCLOSED0001", "close", "failed", { finishedAt: at(5), reason: "StepFailed" }),
       run("01M8M0NTHM0NTHM0NTHM0N0001", "month", "completed", { finishedAt: at(9) }),
@@ -567,36 +586,51 @@ function grouped(): World {
   };
 }
 
-test("the start page: a group's pipelines are one row, opened in place, a failure named on it", async () => {
-  localStorage.clear();
-  show("#/runs", grouped());
-  const table = await screen.findByRole("table");
-  const rows = () => within(table).getAllByRole("row").slice(1).map((r) => r.querySelector("a")!.textContent);
-  expect(rows()).toEqual(["finance", "shop", "alone"]); // groups first, by name; then pipelines of none
-  const shop = within(table).getByRole("link", { name: "shop" }).closest("tr")!;
-  expect(within(shop).getByLabelText("2 pipelines")).toHaveTextContent("2");
-  expect(within(shop).getByText("1 failing")).toHaveAttribute("title", "last run failed: close"); // a closed group doesn't hide a failure
-  expect(shop).not.toHaveTextContent("month"); // one line: its pipelines show once it is open
-  expect(shop).toHaveTextContent("1 of 2"); // its runs together
-  expect(screen.getByText("pipelines").nextElementSibling).toHaveTextContent("4 in 2 groups");
+test("home: a card per group, saying what goes on there, with a door into each kind of its work", async () => {
+  show("#/", grouped());
+  const shop = await screen.findByRole("listitem", { name: "group shop" });
+  // By name, the pipelines that name no group last.
+  expect(screen.getAllByRole("listitem", { name: /^group / }).map((c) => c.getAttribute("aria-label"))).toEqual([
+    "group finance", "group shop", "group Not in a group",
+  ]);
+  expect(shop).toHaveTextContent("project books v3 · deployed"); // which project deployed it: a detail
+  await waitFor(() => expect(shop).toHaveTextContent("needs a look"));
+  const doors = within(shop).getByRole("navigation", { name: "into shop" });
+  expect(within(doors).getAllByRole("link").map((a) => [a.getAttribute("aria-label"), a.getAttribute("href")])).toEqual([
+    ["Pipelines: 2", "#/groups/shop"],
+    ["Signals: 0", "#/groups/shop/signals"],
+    ["Loops: 1", "#/groups/shop/loops"],
+  ]);
+  expect(within(doors).getByRole("link", { name: "Pipelines: 2" })).toHaveTextContent("1 failed last time");
+  expect(screen.getByRole("listitem", { name: "group finance" })).toHaveTextContent("quiet");
+  // What needs you comes first, as a way straight to it.
+  const needs = screen.getByRole("list", { name: "needs you" });
+  expect(within(needs).getByRole("link")).toHaveAttribute("href", "#/groups/shop");
+  // Home has no pipelines, signals or loops of its own.
+  expect(screen.queryByRole("table")).not.toBeInTheDocument();
 
-  await userEvent.click(within(shop).getByRole("button", { name: "open shop" }));
-  expect(rows()).toEqual(["finance", "shop", "close", "month", "alone"]);
-  expect(JSON.parse(localStorage.getItem("moksha.openGroups")!)).toEqual(["shop"]); // stays open next time
-
-  await userEvent.click(within(table).getByRole("link", { name: "shop" }));
+  await userEvent.click(shop);
   await waitFor(() => expect(window.location.hash).toBe("#/groups/shop"));
-});
-
-test("a group's page lists its pipelines; theirs say which group they are in", async () => {
-  show("#/groups/shop", grouped());
   const table = await screen.findByRole("table");
   expect(within(table).getAllByRole("row").slice(1).map((r) => r.querySelector("a")!.textContent)).toEqual(["close", "month"]);
-  expect(screen.getByRole("navigation", { name: "breadcrumb" })).toHaveTextContent("Pipelines");
+  expect(screen.getByRole("navigation", { name: "breadcrumb" })).toHaveTextContent("GroupsshopPipelines");
+});
 
-  await userEvent.click(within(table).getByRole("link", { name: "close" }));
+test("a group's pipeline and its runs stay in the group: crumbs and sidebar", async () => {
+  show("#/pipelines/close", grouped());
   const crumbs = await screen.findByRole("navigation", { name: "breadcrumb" });
   await waitFor(() => expect(within(crumbs).getByRole("link", { name: "shop" })).toHaveAttribute("href", "#/groups/shop"));
-  expect(parse("#/groups/a%2Fb")).toEqual({ name: "group", group: "a/b" });
-  expect(href({ name: "group", group: "a/b" })).toBe("#/groups/a%2Fb");
+  const nav = screen.getByRole("navigation", { name: "main" });
+  expect(nav).toHaveTextContent("shop");
+  expect(within(nav).getByRole("link", { name: "Pipelines" })).toHaveClass("active");
+  expect(parse("#/groups/a%2Fb/loops")).toEqual({ name: "loops", group: "a/b" });
+  expect(href({ name: "signals", group: "a/b" })).toBe("#/groups/a%2Fb/signals");
+});
+
+test("pipelines that name no group have a card of their own on home", async () => {
+  show("#/", threeKinds());
+  const loose = await screen.findByRole("listitem", { name: "group Not in a group" });
+  expect(loose).toHaveTextContent("no project deployed it");
+  expect(within(loose).getByRole("link", { name: /^Pipelines/ })).toHaveAttribute("href", "#/groups/~");
+  expect(parse("#/runs")).toEqual({ name: "home" }); // the old start page's URL lands home
 });

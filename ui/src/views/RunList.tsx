@@ -4,7 +4,7 @@ import { useApi } from "../api";
 import type { Run } from "../gen/moksha/v1/run_pb";
 import { ago, duration, fromNow, ms, RUN_STATUSES, Status, steps, took, Values, when } from "../format";
 import { message, usePoll } from "../hooks";
-import { usePipelines, type Pipelines } from "../pipelines";
+import { groupLabel, usePipelines, type Pipelines } from "../pipelines";
 import { Link, navigate } from "../router";
 import { parked } from "../waits";
 import { Icon } from "../icons";
@@ -19,7 +19,7 @@ const OVERVIEW = 500;
 // useOverview is the newest runs of pipelines that end, by pipeline (newest
 // first), with every pipeline listed even if it never ran; ready once both
 // lists have loaded (else a loop would flash up as a pipeline).
-function useOverview(pipelines: Pipelines) {
+export function useOverview(pipelines: Pipelines) {
   const api = useApi();
   const overview = usePoll(() => api.runs.listRuns({ kind: "pipeline", limit: OVERVIEW }), []);
   const byName = new Map<string, Run[]>();
@@ -29,29 +29,26 @@ function useOverview(pipelines: Pipelines) {
   return { overview, byName, names, ready: !!overview.data && pipelines.loaded };
 }
 
-// RunList is the start page: the pipelines that end (runs by name) and what
-// to know about each: what it is, how it is started, how its recent runs
-// went. Pipelines of one group (@pipeline(group=)) are one row, opened in
-// place or on the group's page. Loops and runs parked on a signal have
-// pages of their own. Their runs are on each pipeline's page.
-export function RunList() {
+// RunList is a group's Pipelines page: the pipelines that end (runs by
+// name) and what to know about each: what it is, how it is started, how its
+// recent runs went. Loops and runs parked on a signal have pages of their
+// own. Their runs are on each pipeline's page.
+export function RunList({ group }: { group: string }) {
   const pipelines = usePipelines();
-  const { overview, byName, names, ready } = useOverview(pipelines);
-  const runs = (overview.data?.runs ?? []).filter((h) => !parked(h) && byName.has(h.name));
-  const groups = new Set(names.map((n) => pipelines.info(n)?.group).filter(Boolean));
+  const { overview, byName, names: all, ready } = useOverview(pipelines);
+  const names = all.filter((n) => pipelines.group(n) === group);
+  const runs = (overview.data?.runs ?? []).filter((h) => !parked(h) && names.includes(h.name));
 
   return (
     <section>
-      <div className="page-head">
-        <h1>Pipelines</h1>
-      </div>
-      <p className="lede">Your code's pipelines, how they start, and how their runs went.</p>
-      {ready && <Stats pipelines={names.length} groups={groups.size} runs={runs} />}
+      <GroupHead group={group} page="Pipelines" pipelines={pipelines} />
+      <p className="lede">The group's pipelines, how they start, and how their runs went.</p>
+      {ready && <Stats pipelines={names.length} runs={runs} />}
       {overview.error && <p className="error">{overview.error}</p>}
       {ready && names.length === 0 && (
-        <p className="dim">No pipelines yet: start workers with your code (moksha dev does, from moksha.yaml).</p>
+        <p className="empty">No pipelines that end in this group: it may only have loops, or none registered now.</p>
       )}
-      {ready && names.length > 0 && <PipelinesTable names={names} byName={byName} pipelines={pipelines} grouped />}
+      {ready && names.length > 0 && <PipelinesTable names={names} byName={byName} pipelines={pipelines} />}
       {overview.data && overview.data.runs.length === OVERVIEW && (
         <p className="dim small">counted over the newest {OVERVIEW} runs</p>
       )}
@@ -59,30 +56,30 @@ export function RunList() {
   );
 }
 
-// GroupPage is one group's pipelines, as on the start page.
-export function GroupPage({ group }: { group: string }) {
-  const pipelines = usePipelines();
-  const { overview, byName, names: all, ready } = useOverview(pipelines);
-  const names = all.filter((n) => pipelines.info(n)?.group === group);
-  const runs = (overview.data?.runs ?? []).filter((h) => !parked(h) && names.includes(h.name));
+// GroupHead is the top of a group's pages: where it is, its name, and the
+// projects that deployed its pipelines (which version, when).
+export function GroupHead({ group, page, pipelines }: { group: string; page: string; pipelines: Pipelines }) {
+  const deployments = pipelines.groups.find((g) => g.name === group)?.deployments ?? [];
   return (
-    <section>
-      <Crumbs items={[{ label: "Pipelines", to: { name: "runs" } }, { label: group }]} />
+    <>
+      <Crumbs items={[{ label: "Groups", to: { name: "home" } }, { label: groupLabel(group), to: { name: "runs", group } }, { label: page }]} />
       <div className="page-head">
-        <h1>
-          <Icon name="group" size={22} /> {group}
-        </h1>
+        <h1>{page}</h1>
+        <span className="group-tag">
+          <Icon name="group" size={13} />
+          {groupLabel(group)}
+        </span>
+        {deployments.map((d) => (
+          <span key={d.project} className="dim small" title={`build ${d.buildId}${d.by ? `, deployed by ${d.by}` : ""}, ${when(d.deployedAt)}`}>
+            project {d.project} v{d.version} · deployed {ago(d.deployedAt)}
+          </span>
+        ))}
       </div>
-      <p className="lede">The pipelines of the group {group}: their code says @pipeline(group="{group}").</p>
-      {ready && <Stats pipelines={names.length} runs={runs} />}
-      {overview.error && <p className="error">{overview.error}</p>}
-      {ready && names.length === 0 && <p className="dim">No pipeline is in this group now.</p>}
-      {ready && names.length > 0 && <PipelinesTable names={names} byName={byName} pipelines={pipelines} />}
-    </section>
+    </>
   );
 }
 
-function Stats({ pipelines, groups = 0, runs }: { pipelines: number; groups?: number; runs: Run[] }) {
+function Stats({ pipelines, runs }: { pipelines: number; runs: Run[] }) {
   const day = Date.now() - 86400000;
   const today = runs.filter((h) => (ms(h.createdAt) ?? 0) >= day);
   const running = runs.filter((h) => h.status === "running").length;
@@ -91,10 +88,7 @@ function Stats({ pipelines, groups = 0, runs }: { pipelines: number; groups?: nu
     <dl className="stats">
       <div>
         <dt>pipelines</dt>
-        <dd>
-          {pipelines}
-          {groups > 0 && <span className="stat-sub"> in {groups === 1 ? "1 group" : `${groups} groups`}</span>}
-        </dd>
+        <dd>{pipelines}</dd>
       </div>
       <div>
         <dt>runs, last 24 h</dt>
@@ -112,41 +106,8 @@ function Stats({ pipelines, groups = 0, runs }: { pipelines: number; groups?: nu
   );
 }
 
-// Which groups are open on the start page, kept in the browser.
-const OPEN_KEY = "moksha.openGroups";
-function useOpenGroups(): [Set<string>, (g: string) => void] {
-  const [open, setOpen] = useState<Set<string>>(() => {
-    try {
-      return new Set(JSON.parse(localStorage.getItem(OPEN_KEY) ?? "[]"));
-    } catch {
-      return new Set();
-    }
-  });
-  const toggle = (g: string) => {
-    const next = new Set(open);
-    if (next.has(g)) next.delete(g);
-    else next.add(g);
-    setOpen(next);
-    try {
-      localStorage.setItem(OPEN_KEY, JSON.stringify([...next]));
-    } catch {
-      // private mode: open for this visit only
-    }
-  };
-  return [open, toggle];
-}
-
-// PipelinesTable lists pipelines. grouped: a group's pipelines are one row
-// (first, by name), with the ungrouped pipelines after them.
-function PipelinesTable({ names, byName, pipelines, grouped = false }: { names: string[]; byName: Map<string, Run[]>; pipelines: Pipelines; grouped?: boolean }) {
-  const [open, toggle] = useOpenGroups();
-  const groups = new Map<string, string[]>();
-  const alone: string[] = [];
-  for (const n of names) {
-    const g = grouped ? pipelines.info(n)?.group : "";
-    if (g) groups.set(g, [...(groups.get(g) ?? []), n]);
-    else alone.push(n);
-  }
+// PipelinesTable lists pipelines, by title.
+function PipelinesTable({ names, byName, pipelines }: { names: string[]; byName: Map<string, Run[]>; pipelines: Pipelines }) {
   return (
     <table className="pipelines">
       <thead>
@@ -166,14 +127,8 @@ function PipelinesTable({ names, byName, pipelines, grouped = false }: { names: 
           <th>usually takes</th>
         </tr>
       </thead>
-      {[...groups.keys()].sort((a, b) => a.localeCompare(b)).map((g) => (
-        <tbody key={g} className={`group${open.has(g) ? " open" : ""}`}>
-          <GroupRow group={g} names={groups.get(g)!} byName={byName} pipelines={pipelines} open={open.has(g)} onToggle={() => toggle(g)} />
-          {open.has(g) && groups.get(g)!.map((name) => <PipelineRow key={name} name={name} runs={byName.get(name)!} pipelines={pipelines} inGroup />)}
-        </tbody>
-      ))}
       <tbody>
-        {alone.map((name) => (
+        {names.map((name) => (
           <PipelineRow key={name} name={name} runs={byName.get(name)!} pipelines={pipelines} />
         ))}
       </tbody>
@@ -181,88 +136,13 @@ function PipelinesTable({ names, byName, pipelines, grouped = false }: { names: 
   );
 }
 
-const failing = (runs: Run[]) => {
+export const failing = (runs: Run[]) => {
   const last = runs.find((h) => !parked(h) && h.finishedAt);
   return last?.status === "failed" || last?.status === "stuck";
 };
 
-// GroupRow sums a group's pipelines up in the table's columns: how they
-// start, the soonest next run, their recent runs together, and those whose
-// last run failed (a closed group doesn't hide a failure).
-function GroupRow({ group, names, byName, pipelines, open, onToggle }: { group: string; names: string[]; byName: Map<string, Run[]>; pipelines: Pipelines; open: boolean; onToggle: () => void }) {
-  const runs = names.flatMap((n) => byName.get(n)!).filter((h) => !parked(h)).sort((a, b) => (ms(b.createdAt) ?? 0) - (ms(a.createdAt) ?? 0));
-  const bad = names.filter((n) => failing(byName.get(n)!));
-  const scheduled = names.filter((n) => pipelines.schedule(n));
-  const subscribed = names.filter((n) => !pipelines.schedule(n) && pipelines.subscription(n));
-  const onDemand = names.length - scheduled.length - subscribed.length;
-  const next = scheduled.map((n) => pipelines.schedule(n)!.nextRun).filter(Boolean).sort((a, b) => (ms(a) ?? 0) - (ms(b) ?? 0))[0];
-  const finished = runs.filter((h) => h.finishedAt);
-  const ok = finished.filter((h) => h.status === "completed" || h.status === "continued").length;
-  const starts = [
-    scheduled.length && `${scheduled.length} scheduled`,
-    subscribed.length && `${subscribed.length} on new data`,
-    onDemand && `${onDemand} on demand`,
-  ].filter(Boolean);
-  const titles = names.map((n) => pipelines.title(n)).join(", ");
-  // One line: the details are in titles, and on the group's rows once open.
-  return (
-    <tr className="clickable group-row" onClick={onToggle} aria-expanded={open} title={titles}>
-      <td>
-        <button
-          type="button"
-          className="group-toggle"
-          aria-label={`${open ? "close" : "open"} ${group}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle();
-          }}
-        >
-          <Icon name="chevron" size={13} />
-        </button>
-        <Icon name="group" size={14} />{" "}
-        <Link to={{ name: "group", group }} className="strong" onClick={(e) => e.stopPropagation()}>
-          {group}
-        </Link>
-        <span className="group-count" aria-label={names.length === 1 ? "1 pipeline" : `${names.length} pipelines`}>
-          {names.length}
-        </span>
-        {bad.length > 0 && (
-          <span className="error small" title={`last run failed: ${bad.map((n) => pipelines.title(n)).join(", ")}`}>
-            {bad.length} failing
-          </span>
-        )}
-      </td>
-      <td className="dim small">{starts.join(" · ")}</td>
-      <td className="small" title={next ? when(next) : undefined}>
-        {next ? fromNow(next) : <span className="dim">–</span>}
-      </td>
-      <td>
-        <Recent runs={runs} label={`recent runs in ${group}`} pipelines={pipelines} />
-        {runs.length === 0 && <span className="dim small">never ran</span>}
-      </td>
-      <td title={runs[0] ? `${pipelines.title(runs[0].name)}, ${when(runs[0].createdAt)}` : undefined}>
-        {runs[0] && (
-          <span className="group-last">
-            <Status status={runs[0].status} /> <span className="dim small">{ago(runs[0].createdAt)}</span>
-          </span>
-        )}
-      </td>
-      <td className="small">
-        {finished.length > 0 ? (
-          <span className={ok < finished.length ? "error" : ""}>
-            {ok} of {finished.length}
-          </span>
-        ) : (
-          <span className="dim">–</span>
-        )}
-      </td>
-      <td />
-    </tr>
-  );
-}
-
 // Recent is a strip of runs, oldest to newest, each as tall as it took.
-function Recent({ runs, label, pipelines }: { runs: Run[]; label: string; pipelines?: Pipelines }) {
+export function Recent({ runs, label, pipelines }: { runs: Run[]; label: string; pipelines?: Pipelines }) {
   const recent = [...runs.slice(0, RECENT)].reverse();
   const longest = Math.max(...recent.map((h) => took(h.createdAt, h.finishedAt) ?? 0), 1);
   return (
@@ -284,7 +164,7 @@ function Recent({ runs, label, pipelines }: { runs: Run[]; label: string; pipeli
 
 const RECENT = 12;
 
-function PipelineRow({ name, runs: all, pipelines, inGroup = false }: { name: string; runs: Run[]; pipelines: Pipelines; inGroup?: boolean }) {
+function PipelineRow({ name, runs: all, pipelines }: { name: string; runs: Run[]; pipelines: Pipelines }) {
   const runs = all.filter((h) => !parked(h));
   const info = pipelines.info(name);
   const schedule = pipelines.schedule(name);
@@ -294,7 +174,7 @@ function PipelineRow({ name, runs: all, pipelines, inGroup = false }: { name: st
   const ok = finished.filter((h) => h.status === "completed" || h.status === "continued").length;
   return (
     // One line, like a group's: the description is its title here, and on its page.
-    <tr className={`clickable${inGroup ? " in-group" : ""}`} onClick={() => navigate({ name: "pipeline", run: name })} title={info?.description || undefined}>
+    <tr className="clickable" onClick={() => navigate({ name: "pipeline", run: name })} title={info?.description || undefined}>
       <td>
         <Link to={{ name: "pipeline", run: name }} className="strong" onClick={(e) => e.stopPropagation()}>
           {pipelines.title(name)}

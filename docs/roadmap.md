@@ -370,6 +370,11 @@ each is one PR:
    a group as one row (its pipelines' starts, recent runs and failures
    together), opened in place or on its own page; crumbs and search name
    it. The newest build that defines a pipeline decides its group.
+   ✅ **Groups first in the web UI**: the start page is the groups, a
+   card each with a door into its Pipelines, Signals and Loops; those
+   pages are per group (`#/groups/<group>/…`), and the sidebar follows the
+   group you are in. The project that deployed a group is a detail on its
+   card. Pipelines that name no group are "Not in a group".
    ✅ **Data versions in lists, dicts and dataclasses are inputs**: passed
    to a step inside its arguments, each is an input named by its path
    (`parts/0`), so lineage and the run's graph have them and the

@@ -4,23 +4,24 @@ import { usePipelines } from "../pipelines";
 import { Link } from "../router";
 import { useSignalWaits, type Wait } from "../waits";
 import { Hint } from "../words";
+import { GroupHead } from "./RunList";
 import { SendSignal } from "./SendSignal";
 
 // Signals: what waits for someone or something outside, by the signal it
 // waits for, each with the form that answers it.
-export function Signals() {
+export function Signals({ group }: { group: string }) {
   const pipelines = usePipelines();
-  const { waits, error, reload } = useSignalWaits();
+  const { waits: all, error, reload } = useSignalWaits();
+  const waits = pipelines.loaded ? all?.filter((w) => pipelines.group(w.run.name) === group) : undefined;
   const byName = new Map<string, Wait[]>();
   for (const w of waits ?? []) byName.set(w.wait.name, [...(byName.get(w.wait.name) ?? []), w]);
 
   return (
     <section>
-      <div className="page-head">
-        <h1>Signals</h1>
-        <Hint word="signal" />
-      </div>
-      <p className="lede">Work paused until someone, or something outside, answers.</p>
+      <GroupHead group={group} page="Signals" pipelines={pipelines} />
+      <p className="lede">
+        Work paused until someone, or something outside, answers. <Hint word="signal" />
+      </p>
       {error && <p className="error">{error}</p>}
       {!waits && !error && <p className="dim">loading…</p>}
       {waits?.length === 0 && <p className="empty">Nothing waits for a signal.</p>}
