@@ -17,6 +17,7 @@ const PATHS: Record<string, string> = {
   workers: "M3 3h10v4H3zM3 9h10v4H3zM5.5 5h.01M5.5 11h.01",
   arrow: "M3 8h10M9.5 4.5L13 8l-3.5 3.5",
   chevron: "M6 3.5L10.5 8 6 12.5",
+  "chevron-left": "M10 3.5L5.5 8 10 12.5",
   group: "M2 4.5h4l1.2 1.5H14v6.5H2z",
   back: "M13 8H3M6.5 4.5L3 8l3.5 3.5",
   saved: "M8 1.8l5 2v3.6c0 3.1-2.1 5.5-5 6.8-2.9-1.3-5-3.7-5-6.8V3.8zM5.6 8.1l1.7 1.7 3.2-3.4",

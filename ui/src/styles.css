@@ -201,38 +201,6 @@ nav.tabs a.tab:hover { color: var(--fg); }
 nav.tabs a.tab.active { color: var(--fg); background: var(--hover); box-shadow: inset 0 0 0 1px var(--line-strong); }
 [role="tabpanel"] > h2:first-child, [role="tabpanel"] > .toolbar:first-child { margin-top: 18px; }
 
-/* A pipeline's runs as a feed: each run, then what it did with data. */
-.feed { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); }
-.feed li + li { border-top: 1px solid var(--line); }
-.feed-run { display: block; padding: 10px 14px; color: inherit; text-decoration: none; }
-.feed-run:hover { text-decoration: none; background: var(--hover); }
-.feed-main { display: grid; grid-template-columns: 96px minmax(0, 1fr) minmax(80px, 180px) 64px 82px; align-items: center; gap: 14px; }
-.feed-inputs { min-width: 0; overflow: hidden; }
-.feed-bar { height: 4px; border-radius: 2px; background: var(--hover); overflow: hidden; }
-.feed-bar i { display: block; height: 100%; border-radius: 2px; background: var(--faint); }
-.feed-completed .feed-bar i { background: color-mix(in srgb, var(--ok) 70%, transparent); }
-.feed-failed .feed-bar i, .feed-stuck .feed-bar i { background: var(--bad); }
-.feed-running .feed-bar i { background: var(--run); }
-.feed-took { font: 12px var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
-.feed-when { font-size: 12px; color: var(--dim); text-align: right; white-space: nowrap; }
-.feed-data { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0 110px; }
-.chip {
-  display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font: 11.5px var(--mono);
-  color: var(--fg); background: color-mix(in srgb, var(--ok) 13%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 22%, transparent);
-}
-.chip svg { flex: none; color: var(--ok); }
-.chip.reused { color: var(--dim); background: var(--hover); box-shadow: inset 0 0 0 1px var(--line-strong); }
-.chip.reused svg { color: var(--dim); }
-.chip.failed { color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bad) 25%, transparent); }
-.chip.failed svg { color: var(--bad); }
-.chip.busy { color: var(--run); background: color-mix(in srgb, var(--run) 12%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--run) 25%, transparent); }
-.chip.busy svg { color: var(--run); }
-@media (max-width: 900px) {
-  .feed-main { grid-template-columns: 90px minmax(0, 1fr) 60px; }
-  .feed-bar, .feed-when { display: none; }
-  .feed-data { margin-left: 0; }
-}
-
 /* A run: its output, steps, logs and what happened. */
 .output { display: grid; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
 .result { font-size: 14px; }
@@ -547,3 +515,30 @@ p.loop-rest { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; ma
   .project-card, .door, .attention-chip svg { transition: none; }
   .project-card.busy .door-link, .project-card.busy .project-state .dot { animation: none; }
 }
+
+/* A pipeline's runs: filters by status, day and hour (UTC), and the day by hour. */
+.run-filters { gap: 10px; margin-top: 18px; }
+.run-filters input[type="date"] { padding: 4px 8px; font: 12.5px var(--mono); }
+.run-filters select:disabled { opacity: 0.5; }
+.day-picker { display: inline-flex; align-items: center; gap: 4px; }
+.icon-button { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; color: var(--dim); }
+.icon-button:hover:not(:disabled) { color: var(--fg); }
+.icon-button:disabled { opacity: 0.4; cursor: default; }
+.quick-days { display: inline-flex; gap: 12px; margin-left: 4px; }
+.quick-days .link-button.on { color: var(--fg); font-weight: 600; }
+.filter-note { margin-left: auto; }
+.hours {
+  display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 3px; align-items: end; margin: 4px 0 14px; padding: 10px 12px 4px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+}
+.hour { all: unset; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-end; gap: 3px; height: 64px; cursor: pointer; }
+.hour:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.hour-bar { display: block; border-radius: 3px 3px 1px 1px; background: var(--line-strong); transition: filter 0.15s, opacity 0.15s; }
+.hour-ok .hour-bar { background: color-mix(in srgb, var(--ok) 75%, transparent); }
+.hour-bad .hour-bar { background: var(--bad); }
+.hour-run .hour-bar { background: var(--run); }
+.hour:hover .hour-bar { filter: brightness(1.25); }
+.hour.picked .hour-bar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3.5px var(--accent); }
+.hour.faded .hour-bar { opacity: 0.35; }
+.hour-label { height: 12px; font: 10px/12px var(--mono); color: var(--faint); text-align: left; }
+@media (prefers-reduced-motion: reduce) { .hour-bar { transition: none; } }

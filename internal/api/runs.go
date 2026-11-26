@@ -91,8 +91,19 @@ func (s *RunServer) ListRuns(ctx context.Context, req *connect.Request[mokshav1.
 		return nil, connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("kind %q: want %q or %q", m.Kind, state.KindPipeline, state.KindLoop))
 	}
-	runs, err := s.store.ListRuns(ctx, state.RunFilter{Tenant: m.Tenant, Name: m.Name, Statuses: m.Statuses,
-		ParentID: m.ParentId, BeforeID: m.BeforeId, Limit: limit, Kind: m.Kind})
+	f := state.RunFilter{Tenant: m.Tenant, Name: m.Name, Statuses: m.Statuses,
+		ParentID: m.ParentId, BeforeID: m.BeforeId, Limit: limit, Kind: m.Kind}
+	if m.CreatedAfter != nil {
+		f.From = m.CreatedAfter.AsTime()
+	}
+	if m.CreatedBefore != nil {
+		f.To = m.CreatedBefore.AsTime()
+	}
+	if !f.From.IsZero() && !f.To.IsZero() && !f.From.Before(f.To) {
+		return nil, connect.NewError(connect.CodeInvalidArgument,
+			fmt.Errorf("created_after %s is not before created_before %s", f.From.UTC().Format(time.RFC3339), f.To.UTC().Format(time.RFC3339)))
+	}
+	runs, err := s.store.ListRuns(ctx, f)
 	if err != nil {
 		return nil, connectError(err)
 	}

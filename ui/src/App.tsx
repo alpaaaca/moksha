@@ -41,7 +41,7 @@ export function App() {
         {route.name === "run" ? (
           <RunDetail key={route.id} id={route.id} step={route.step} />
         ) : route.name === "pipeline" ? (
-          <Pipeline run={route.run} tab={route.tab ?? "overview"} />
+          <Pipeline run={route.run} tab={route.tab ?? "runs"} />
         ) : route.name === "runs" ? (
           <RunList key={route.group} group={route.group} />
         ) : route.name === "signals" ? (

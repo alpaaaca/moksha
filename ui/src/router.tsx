@@ -8,7 +8,7 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 
 // A pipeline page's tabs; the first is the default, left out of its URL.
-export const PIPELINE_TABS = ["overview", "runs", "workers", "start"] as const;
+export const PIPELINE_TABS = ["runs", "steps", "workers", "start"] as const;
 export type PipelineTab = (typeof PIPELINE_TABS)[number];
 
 // LOOSE stands for the pipelines whose code names no group.
@@ -37,7 +37,7 @@ export function parse(hash: string): Route {
   if (parts[0] === "workers") return { name: "workers" };
   if (parts[0] === "pipelines" && parts[1]) {
     const tab = PIPELINE_TABS.find((t) => t === parts[2]);
-    return tab && tab !== "overview" ? { name: "pipeline", run: parts[1], tab } : { name: "pipeline", run: parts[1] };
+    return tab && tab !== "runs" ? { name: "pipeline", run: parts[1], tab } : { name: "pipeline", run: parts[1] };
   }
   return { name: "home" };
 }
@@ -53,7 +53,7 @@ export function href(r: Route): string {
     case "loops":
       return `${g(r.group)}/${r.name}`;
     case "pipeline":
-      return `#/pipelines/${encodeURIComponent(r.run)}` + (r.tab && r.tab !== "overview" ? `/${r.tab}` : "");
+      return `#/pipelines/${encodeURIComponent(r.run)}` + (r.tab && r.tab !== "runs" ? `/${r.tab}` : "");
     case "activity":
     case "workers":
       return `#/${r.name}`;

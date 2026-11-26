@@ -218,6 +218,10 @@ message ListRunsRequest {
   // pipeline: only runs of pipelines that end; loop: only runs of loops
   // (Pipeline.loops). Empty: both.
   string kind = 8;
+  // Only runs started at or after this time, and before created_before
+  // (a day, an hour). Unset: no bound.
+  google.protobuf.Timestamp created_after = 9;
+  google.protobuf.Timestamp created_before = 10;
 }
 
 message CancelRunRequest {
