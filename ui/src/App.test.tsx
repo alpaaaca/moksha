@@ -1,5 +1,5 @@
 import { create, type MessageInitShape } from "@bufbuild/protobuf";
-import { timestampFromDate, type Timestamp } from "@bufbuild/protobuf/wkt";
+import { timestampFromDate, timestampMs, type Timestamp } from "@bufbuild/protobuf/wkt";
 import { createRouterTransport } from "@connectrpc/connect";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -7,6 +7,7 @@ import userEvent from "@testing-library/user-event";
 import { ApiProvider, apiFor } from "./api";
 import { App } from "./App";
 import { href, parse } from "./router";
+import { utcDay } from "./views/PipelineRuns";
 import { RunSchema, RunService, StepCountsSchema, StepSchema } from "./gen/moksha/v1/run_pb";
 import { LogService } from "./gen/moksha/v1/log_pb";
 import { DeployService } from "./gen/moksha/v1/deploy_pb";
@@ -81,7 +82,16 @@ function fakeServer(world?: World) {
         const all = (world?.runs ?? [daily, done, stuck, broken]).filter(
           (h) => !req.kind || (req.kind === "loop") === !!world?.loops.includes(h.name),
         );
-        return { runs: all.filter((h) => (!req.name || h.name === req.name) && (!req.statuses.length || req.statuses.includes(h.status))) };
+        const t = (h: ReturnType<typeof run>) => timestampMs(h.createdAt!);
+        return {
+          runs: all.filter(
+            (h) =>
+              (!req.name || h.name === req.name) &&
+              (!req.statuses.length || req.statuses.includes(h.status)) &&
+              (!req.createdAfter || t(h) >= timestampMs(req.createdAfter)) &&
+              (!req.createdBefore || t(h) < timestampMs(req.createdBefore)),
+          ),
+        };
       },
       getRun(req) {
         record("getRun", req);
@@ -212,55 +222,42 @@ test("a group's Pipelines page: each pipeline's meta information, not its runs",
   await waitFor(() => expect(window.location.hash).toBe("#/pipelines/daily"));
 });
 
-test("a pipeline: its recent runs told by their data", async () => {
+test("a pipeline opens on its runs; a tab each for its workers and starting one", async () => {
   const { calls } = show("#/pipelines/daily");
   expect(await screen.findByRole("heading", { name: "Daily revenue" })).toBeInTheDocument();
   expect(screen.getByRole("navigation", { name: "breadcrumb" })).toHaveTextContent("GroupsrevenueDaily revenue");
   expect(screen.getByText(/on a schedule/)).toHaveTextContent("0 3 * * * (Europe/Berlin), daily data");
   expect(screen.getByText("next run").nextElementSibling).toHaveTextContent("in 5 h");
-
-  // A run each, newest first: what it wrote and reused, what failed or still runs.
-  const feed = await screen.findByRole("list", { name: "recent runs" });
-  const runs = within(feed).getAllByRole("link");
-  expect(runs.map((r) => r.getAttribute("aria-label"))).toEqual([
-    "run of day 2026-10-24: running", "run of day 2026-10-23: completed", "run of day 2026-10-22: failed",
-  ]);
-  const chips = (r: HTMLElement) => [...r.querySelectorAll(".chip")].map((c) => `${c.className.replace("chip ", "")} ${c.textContent}`);
-  expect(chips(runs[0])).toEqual(["wrote raw.orders", "reused mart.revenue", "busy report"]);
-  expect(chips(runs[1])).toEqual([]);
-  expect(runs[1]).toHaveTextContent("3 steps · all reused");
-  expect(chips(runs[2])).toEqual(["failed build failed"]);
-  expect(calls.listRuns.find((r) => (r as { withSteps?: boolean }).withSteps)).toMatchObject({ name: "daily", withSteps: true });
-  // A run opens.
-  await userEvent.click(runs[2]);
-  await waitFor(() => expect(window.location.hash).toBe("#/runs/01M6EEEEEEEEEEEEEEEEEEEEEE"));
-});
-
-test("a pipeline: its steps as a graph, all its runs, starting one; a tab each", async () => {
-  const { calls } = show("#/pipelines/daily");
-  const graph = await screen.findByRole("list", { name: "steps graph" });
-  expect(within(graph).getAllByRole("listitem").map((n) => n.textContent)).toEqual(["extractraw.orders", "buildmart.revenue", "report"]);
-  expect(within(graph).getByTitle("writes raw.orders")).toHaveTextContent("raw.orders");
   const tabs = screen.getByRole("tablist", { name: "pipeline" });
-  expect(within(tabs).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Overview", "Runs", "Workers", "Start a run"]);
-  expect(within(tabs).getByRole("tab", { selected: true })).toHaveTextContent("Overview");
+  expect(within(tabs).getAllByRole("tab").map((t) => t.textContent)).toEqual(["Runs", "Steps", "Workers", "Start a run"]);
+  expect(within(tabs).getByRole("tab", { selected: true })).toHaveTextContent("Runs");
   // Other tabs' content isn't there, nor asked for.
   expect(screen.queryByLabelText("inputs")).not.toBeInTheDocument();
   expect(calls.getPipelineWorkers).toBeUndefined();
 
-  await userEvent.click(within(tabs).getByRole("tab", { name: "Runs" }));
-  await waitFor(() => expect(window.location.hash).toBe("#/pipelines/daily/runs"));
   const panel = screen.getByRole("tabpanel", { name: "Runs" });
   const runs = await within(panel).findByRole("table");
   expect(within(runs).getByText("2026-10-23").closest("tr")).toHaveTextContent("3 steps · all reused");
-  expect(screen.queryByRole("list", { name: "steps graph" })).not.toBeInTheDocument();
   await userEvent.selectOptions(screen.getByLabelText("status"), "completed");
   await waitFor(() => expect(within(within(panel).getByRole("table")).queryByText("2026-10-24")).not.toBeInTheDocument());
   expect(calls.listRuns.at(-1)).toMatchObject({ name: "daily", statuses: ["completed"] });
+  expect(screen.queryByRole("list", { name: "steps graph" })).not.toBeInTheDocument();
+
+  // Its steps as a graph, as in the latest run, with what each writes.
+  await userEvent.click(within(tabs).getByRole("tab", { name: "Steps" }));
+  await waitFor(() => expect(window.location.hash).toBe("#/pipelines/daily/steps"));
+  const graph = await screen.findByRole("list", { name: "steps graph" });
+  expect(within(graph).getAllByRole("listitem").map((n) => n.textContent)).toEqual(["extractraw.orders", "buildmart.revenue", "report"]);
+  expect(within(graph).getByTitle("writes raw.orders")).toHaveTextContent("raw.orders");
+  expect(screen.queryByRole("table")).not.toBeInTheDocument();
+
+  // A run opens.
+  await userEvent.click(within(tabs).getByRole("tab", { name: "Runs" }));
+  await userEvent.click(within(await screen.findByRole("table")).getByText("2026-10-23"));
+  await waitFor(() => expect(window.location.hash).toBe("#/runs/01M6DDDDDDDDDDDDDDDDDDDDDD"));
 
   // Starting a run: the inputs start as the latest run's.
-  await userEvent.click(within(tabs).getByRole("tab", { name: "Start a run" }));
-  await waitFor(() => expect(window.location.hash).toBe("#/pipelines/daily/start"));
+  window.location.hash = "#/pipelines/daily/start";
   const params = await screen.findByLabelText("inputs");
   await waitFor(() => expect(params).toHaveValue('{\n  "day": "2026-10-24"\n}')); // pretty, to edit
   await userEvent.clear(params);
@@ -281,6 +278,46 @@ test("a pipeline: its steps as a graph, all its runs, starting one; a tab each",
   await userEvent.type(params, "{Control>}{Enter}{/Control}"); // starts it, like the button
   await waitFor(() => expect(window.location.hash).toBe("#/runs/01M6AAAAAAAAAAAAAAAAAAAAAA"));
   expect(calls.startRun[0]).toMatchObject({ name: "daily", paramsJson: '{\n  "day": "2026-10-25"\n}', trigger: "the web UI" });
+});
+
+test("a pipeline's runs narrow to a day (UTC), then to an hour of it", async () => {
+  const { calls } = show("#/pipelines/daily");
+  const panel = await screen.findByRole("tabpanel", { name: "Runs" });
+  await within(panel).findByRole("table");
+  expect(screen.getByLabelText("hour (UTC)")).toBeDisabled(); // an hour only within a day
+  expect(screen.queryByRole("group", { name: "runs by hour (UTC)" })).not.toBeInTheDocument();
+
+  // The day the fixture's runs started: the server narrows to it.
+  const day = utcDay(start.getTime());
+  const hour = start.getUTCHours();
+  await userEvent.type(screen.getByLabelText("day (UTC)"), day);
+  const hours = await screen.findByRole("group", { name: "runs by hour (UTC)" });
+  const from = Date.parse(`${day}T00:00:00Z`);
+  await waitFor(() => expect(calls.listRuns.at(-1)).toMatchObject({ name: "daily", limit: 1000 }));
+  const req = calls.listRuns.at(-1) as { createdAfter: Timestamp; createdBefore: Timestamp };
+  expect([timestampMs(req.createdAfter), timestampMs(req.createdBefore)]).toEqual([from, from + 86400000]);
+  const hh = String(hour).padStart(2, "0");
+  const busy = within(hours).getByRole("button", { name: `${hh}:00: 3 runs, 1 failed` });
+  expect(busy).toHaveClass("hour-bad");
+  expect(within(within(panel).getByRole("table")).getAllByRole("row")).toHaveLength(4); // a header and 3 runs
+
+  // An hour with none of them: nothing to list.
+  const other = (hour + 5) % 24;
+  await userEvent.selectOptions(screen.getByLabelText("hour (UTC)"), String(other));
+  expect(within(panel).getByText(/^No runs between/)).toBeInTheDocument();
+  // Picking the busy bar narrows to it; again, and it lets go.
+  await userEvent.click(busy);
+  expect(busy).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText(/3 runs of 3/)).toBeInTheDocument();
+  await userEvent.click(busy);
+  expect(screen.getByLabelText("hour (UTC)")).toHaveValue("");
+
+  // The day before has none; Any day goes back to the newest.
+  await userEvent.click(screen.getByRole("button", { name: "day before" }));
+  expect(await within(panel).findByText("No runs that day.")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Any day" }));
+  expect(await within(panel).findByRole("table")).toBeInTheDocument();
+  expect(calls.listRuns.at(-1)).toMatchObject({ limit: 100 });
 });
 
 test("a scheduled pipeline starts by hand with the latest interval as its inputs", async () => {
@@ -425,12 +462,12 @@ test("a pipeline: the workers that worked on its runs", async () => {
   expect(calls.getPipelineWorkers[0]).toMatchObject({ name: "daily", runs: 100 });
 });
 
-test("pipeline tabs have their own URLs; the overview's is the pipeline's", () => {
+test("pipeline tabs have their own URLs; the runs' is the pipeline's", () => {
   expect(parse("#/pipelines/daily/workers")).toEqual({ name: "pipeline", run: "daily", tab: "workers" });
-  expect(parse("#/pipelines/daily/overview")).toEqual({ name: "pipeline", run: "daily" });
+  expect(parse("#/pipelines/daily/runs")).toEqual({ name: "pipeline", run: "daily" });
+  expect(parse("#/pipelines/daily/overview")).toEqual({ name: "pipeline", run: "daily" }); // the tab that was: its runs now
   expect(parse("#/pipelines/daily/nope")).toEqual({ name: "pipeline", run: "daily" });
-  expect(href({ name: "pipeline", run: "daily", tab: "runs" })).toBe("#/pipelines/daily/runs");
-  expect(href({ name: "pipeline", run: "daily", tab: "overview" })).toBe("#/pipelines/daily");
+  expect(href({ name: "pipeline", run: "daily", tab: "runs" })).toBe("#/pipelines/daily");
 });
 
 test("the sidebar moves between pages; the palette (⌘K) finds a pipeline or run", async () => {

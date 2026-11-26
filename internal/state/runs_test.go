@@ -109,6 +109,35 @@ func TestRunUnsetJSONStaysNil(t *testing.T) {
 	assert.Nil(t, ls[0].Result)
 }
 
+func TestListRunsByTime(t *testing.T) {
+	s, _ := openFile(t)
+	var writes []func(tx *Tx) error
+	// h0 at t0, h1 a minute later, ..., h4 four hours (and minutes) in.
+	for i := range 5 {
+		h := run(fmt.Sprintf("h%d", i), RunCompleted)
+		h.CreatedAt = t0.Add(time.Duration(i)*time.Hour + time.Duration(i)*time.Minute)
+		writes = append(writes, func(tx *Tx) error { return tx.PutRun(h) })
+	}
+	put(t, s, nil, writes...)
+	ids := func(f RunFilter) []string {
+		t.Helper()
+		runs, err := s.ListRuns(ctx, f)
+		require.NoError(t, err)
+		var out []string
+		for _, h := range runs {
+			out = append(out, h.ID)
+		}
+		return out
+	}
+
+	assert.Equal(t, []string{"h2", "h1"}, ids(RunFilter{From: t0.Add(time.Hour), To: t0.Add(3 * time.Hour)}), "from is in, to is out")
+	assert.Equal(t, []string{"h4", "h3"}, ids(RunFilter{From: t0.Add(3 * time.Hour)}))
+	assert.Equal(t, []string{"h0"}, ids(RunFilter{To: t0.Add(time.Minute)}))
+	// Times in another zone are the same instants.
+	berlin := time.FixedZone("CET", 3600)
+	assert.Equal(t, []string{"h1"}, ids(RunFilter{From: t0.Add(time.Hour).In(berlin), To: t0.Add(2 * time.Hour).In(berlin)}))
+}
+
 func TestCountSteps(t *testing.T) {
 	s, _ := openFile(t)
 	writes := []func(tx *Tx) error{

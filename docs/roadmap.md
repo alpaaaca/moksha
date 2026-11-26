@@ -375,6 +375,10 @@ each is one PR:
    pages are per group (`#/groups/<group>/…`), and the sidebar follows the
    group you are in. The project that deployed a group is a detail on its
    card. Pipelines that name no group are "Not in a group".
+   ✅ **A pipeline's runs by day and hour**: a pipeline's page opens on
+   its runs; its steps graph has a tab of its own (no Overview tab).
+   They narrow to a day in UTC (`ListRuns` `created_after` and
+   `created_before`), shown by hour, and to an hour of it.
    ✅ **Data versions in lists, dicts and dataclasses are inputs**: passed
    to a step inside its arguments, each is an input named by its path
    (`parts/0`), so lineage and the run's graph have them and the

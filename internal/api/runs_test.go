@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mokshav1 "github.com/alper/moksha/internal/api/gen/moksha/v1"
 	"github.com/alper/moksha/internal/api/gen/moksha/v1/mokshav1connect"
@@ -177,6 +178,18 @@ func TestListRunsAndEventLog(t *testing.T) {
 	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 	_, err = c.ListRuns(ctx, connect.NewRequest(&mokshav1.ListRunsRequest{Limit: 500, WithSteps: true}))
 	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
+	// By when they started: the run's creation time bounds it.
+	created := runCreatedAt(t, c, ids[0])
+	got, err = c.ListRuns(ctx, connect.NewRequest(&mokshav1.ListRunsRequest{Name: "daily",
+		CreatedAfter: timestamppb.New(created.Add(-time.Hour)), CreatedBefore: timestamppb.New(created.Add(time.Hour))}))
+	require.NoError(t, err)
+	assert.Len(t, got.Msg.Runs, 2)
+	got, err = c.ListRuns(ctx, connect.NewRequest(&mokshav1.ListRunsRequest{Name: "daily", CreatedAfter: timestamppb.New(created.Add(time.Hour))}))
+	require.NoError(t, err)
+	assert.Empty(t, got.Msg.Runs)
+	_, err = c.ListRuns(ctx, connect.NewRequest(&mokshav1.ListRunsRequest{
+		CreatedAfter: timestamppb.New(created), CreatedBefore: timestamppb.New(created)}))
+	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err), "an empty range")
 
 	lb, err := c.GetEventLog(ctx, connect.NewRequest(&mokshav1.GetEventLogRequest{RunId: ids[0]}))
 	require.NoError(t, err)
@@ -188,6 +201,14 @@ func TestListRunsAndEventLog(t *testing.T) {
 	}
 	_, err = c.GetEventLog(ctx, connect.NewRequest(&mokshav1.GetEventLogRequest{RunId: "nope"}))
 	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+}
+
+// runCreatedAt is when a run was created, as the API says.
+func runCreatedAt(t *testing.T, c mokshav1connect.RunServiceClient, id string) time.Time {
+	t.Helper()
+	res, err := c.GetRun(ctx, connect.NewRequest(&mokshav1.GetRunRequest{RunId: id}))
+	require.NoError(t, err)
+	return res.Msg.Run.CreatedAt.AsTime()
 }
 
 func TestCancelResumeAndChildren(t *testing.T) {

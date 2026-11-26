@@ -298,6 +298,8 @@ type RunFilter struct {
 	BeforeID string // pages backwards: only IDs (ULIDs) lower than this
 	Limit    int    // default 50
 	Kind     string // KindPipeline or KindLoop; empty: both
+	// Only runs created at or after From and before To; zero: no bound.
+	From, To time.Time
 }
 
 // ListRuns returns runs newest first.
@@ -317,6 +319,13 @@ func (s *Store) ListRuns(ctx context.Context, f RunFilter) ([]Run, error) {
 	}
 	if f.BeforeID != "" {
 		where, args = append(where, "id < ?"), append(args, f.BeforeID)
+	}
+	// created_at is fixed-width UTC text (tsLayout), so it compares as text.
+	if !f.From.IsZero() {
+		where, args = append(where, "created_at >= ?"), append(args, formatTime(f.From))
+	}
+	if !f.To.IsZero() {
+		where, args = append(where, "created_at < ?"), append(args, formatTime(f.To))
 	}
 	switch f.Kind {
 	case KindPipeline:

@@ -1252,7 +1252,11 @@ type ListRunsRequest struct {
 	WithSteps bool `protobuf:"varint,7,opt,name=with_steps,json=withSteps,proto3" json:"with_steps,omitempty"`
 	// pipeline: only runs of pipelines that end; loop: only runs of loops
 	// (Pipeline.loops). Empty: both.
-	Kind          string `protobuf:"bytes,8,opt,name=kind,proto3" json:"kind,omitempty"`
+	Kind string `protobuf:"bytes,8,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Only runs started at or after this time, and before created_before
+	// (a day, an hour). Unset: no bound.
+	CreatedAfter  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_after,json=createdAfter,proto3" json:"created_after,omitempty"`
+	CreatedBefore *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_before,json=createdBefore,proto3" json:"created_before,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1341,6 +1345,20 @@ func (x *ListRunsRequest) GetKind() string {
 		return x.Kind
 	}
 	return ""
+}
+
+func (x *ListRunsRequest) GetCreatedAfter() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAfter
+	}
+	return nil
+}
+
+func (x *ListRunsRequest) GetCreatedBefore() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedBefore
+	}
+	return nil
 }
 
 type CancelRunRequest struct {
@@ -3276,7 +3294,7 @@ const file_moksha_v1_run_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x14\n" +
 	"\x05loops\x18\x04 \x01(\bR\x05loops\x12\x14\n" +
-	"\x05group\x18\x05 \x01(\tR\x05group\"\xdc\x01\n" +
+	"\x05group\x18\x05 \x01(\tR\x05group\"\xe0\x02\n" +
 	"\x0fListRunsRequest\x12\x16\n" +
 	"\x06tenant\x18\x01 \x01(\tR\x06tenant\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
@@ -3286,7 +3304,10 @@ const file_moksha_v1_run_proto_rawDesc = "" +
 	"\tbefore_id\x18\x06 \x01(\tR\bbeforeId\x12\x1d\n" +
 	"\n" +
 	"with_steps\x18\a \x01(\bR\twithSteps\x12\x12\n" +
-	"\x04kind\x18\b \x01(\tR\x04kind\"9\n" +
+	"\x04kind\x18\b \x01(\tR\x04kind\x12?\n" +
+	"\rcreated_after\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\fcreatedAfter\x12A\n" +
+	"\x0ecreated_before\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\rcreatedBefore\"9\n" +
 	"\x10CancelRunRequest\x12\x15\n" +
 	"\x06run_id\x18\x01 \x01(\tR\x05runId\x12\x0e\n" +
 	"\x02by\x18\x02 \x01(\tR\x02by\"\x13\n" +
@@ -3534,64 +3555,66 @@ var file_moksha_v1_run_proto_depIdxs = []int32{
 	46, // 13: moksha.v1.PipelineWorker.first_at:type_name -> google.protobuf.Timestamp
 	46, // 14: moksha.v1.PipelineWorker.last_at:type_name -> google.protobuf.Timestamp
 	18, // 15: moksha.v1.ListPipelinesResponse.pipelines:type_name -> moksha.v1.Pipeline
-	41, // 16: moksha.v1.ListRunsResponse.runs:type_name -> moksha.v1.Run
-	41, // 17: moksha.v1.GetEventLogResponse.run:type_name -> moksha.v1.Run
-	27, // 18: moksha.v1.GetEventLogResponse.event_log:type_name -> moksha.v1.LoggedEvent
-	46, // 19: moksha.v1.LoggedEvent.time:type_name -> google.protobuf.Timestamp
-	30, // 20: moksha.v1.GetHistoryResponse.entries:type_name -> moksha.v1.HistoryEntry
-	46, // 21: moksha.v1.HistoryEntry.time:type_name -> google.protobuf.Timestamp
-	34, // 22: moksha.v1.ListSchedulesResponse.schedules:type_name -> moksha.v1.Schedule
-	33, // 23: moksha.v1.ListSchedulesResponse.subscriptions:type_name -> moksha.v1.Subscription
-	47, // 24: moksha.v1.Subscription.debounce:type_name -> google.protobuf.Duration
-	47, // 25: moksha.v1.Subscription.max_wait:type_name -> google.protobuf.Duration
-	46, // 26: moksha.v1.Schedule.cursor:type_name -> google.protobuf.Timestamp
-	46, // 27: moksha.v1.Schedule.next_run:type_name -> google.protobuf.Timestamp
-	41, // 28: moksha.v1.GetRunResponse.run:type_name -> moksha.v1.Run
-	46, // 29: moksha.v1.Run.created_at:type_name -> google.protobuf.Timestamp
-	46, // 30: moksha.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
-	45, // 31: moksha.v1.Run.steps:type_name -> moksha.v1.Step
-	44, // 32: moksha.v1.Run.step_counts:type_name -> moksha.v1.StepCounts
-	43, // 33: moksha.v1.Run.waiting:type_name -> moksha.v1.Waiting
-	42, // 34: moksha.v1.Run.signal_waits:type_name -> moksha.v1.SignalWait
-	46, // 35: moksha.v1.SignalWait.times_out_at:type_name -> google.protobuf.Timestamp
-	46, // 36: moksha.v1.Waiting.since:type_name -> google.protobuf.Timestamp
-	46, // 37: moksha.v1.Step.scheduled_at:type_name -> google.protobuf.Timestamp
-	46, // 38: moksha.v1.Step.finished_at:type_name -> google.protobuf.Timestamp
-	37, // 39: moksha.v1.RunService.StartRun:input_type -> moksha.v1.StartRunRequest
-	39, // 40: moksha.v1.RunService.GetRun:input_type -> moksha.v1.GetRunRequest
-	35, // 41: moksha.v1.RunService.SignalRun:input_type -> moksha.v1.SignalRunRequest
-	20, // 42: moksha.v1.RunService.CancelRun:input_type -> moksha.v1.CancelRunRequest
-	22, // 43: moksha.v1.RunService.ResumeRun:input_type -> moksha.v1.ResumeRunRequest
-	19, // 44: moksha.v1.RunService.ListRuns:input_type -> moksha.v1.ListRunsRequest
-	25, // 45: moksha.v1.RunService.GetEventLog:input_type -> moksha.v1.GetEventLogRequest
-	28, // 46: moksha.v1.RunService.GetHistory:input_type -> moksha.v1.GetHistoryRequest
-	31, // 47: moksha.v1.RunService.ListSchedules:input_type -> moksha.v1.ListSchedulesRequest
-	16, // 48: moksha.v1.RunService.ListPipelines:input_type -> moksha.v1.ListPipelinesRequest
-	10, // 49: moksha.v1.RunService.ListWorkers:input_type -> moksha.v1.ListWorkersRequest
-	13, // 50: moksha.v1.RunService.GetPipelineWorkers:input_type -> moksha.v1.GetPipelineWorkersRequest
-	7,  // 51: moksha.v1.RunService.ListPools:input_type -> moksha.v1.ListPoolsRequest
-	4,  // 52: moksha.v1.RunService.ListCode:input_type -> moksha.v1.ListCodeRequest
-	0,  // 53: moksha.v1.RunService.PlanRuns:input_type -> moksha.v1.PlanRunsRequest
-	38, // 54: moksha.v1.RunService.StartRun:output_type -> moksha.v1.StartRunResponse
-	40, // 55: moksha.v1.RunService.GetRun:output_type -> moksha.v1.GetRunResponse
-	36, // 56: moksha.v1.RunService.SignalRun:output_type -> moksha.v1.SignalRunResponse
-	21, // 57: moksha.v1.RunService.CancelRun:output_type -> moksha.v1.CancelRunResponse
-	23, // 58: moksha.v1.RunService.ResumeRun:output_type -> moksha.v1.ResumeRunResponse
-	24, // 59: moksha.v1.RunService.ListRuns:output_type -> moksha.v1.ListRunsResponse
-	26, // 60: moksha.v1.RunService.GetEventLog:output_type -> moksha.v1.GetEventLogResponse
-	29, // 61: moksha.v1.RunService.GetHistory:output_type -> moksha.v1.GetHistoryResponse
-	32, // 62: moksha.v1.RunService.ListSchedules:output_type -> moksha.v1.ListSchedulesResponse
-	17, // 63: moksha.v1.RunService.ListPipelines:output_type -> moksha.v1.ListPipelinesResponse
-	11, // 64: moksha.v1.RunService.ListWorkers:output_type -> moksha.v1.ListWorkersResponse
-	14, // 65: moksha.v1.RunService.GetPipelineWorkers:output_type -> moksha.v1.GetPipelineWorkersResponse
-	8,  // 66: moksha.v1.RunService.ListPools:output_type -> moksha.v1.ListPoolsResponse
-	5,  // 67: moksha.v1.RunService.ListCode:output_type -> moksha.v1.ListCodeResponse
-	1,  // 68: moksha.v1.RunService.PlanRuns:output_type -> moksha.v1.PlanRunsResponse
-	54, // [54:69] is the sub-list for method output_type
-	39, // [39:54] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	46, // 16: moksha.v1.ListRunsRequest.created_after:type_name -> google.protobuf.Timestamp
+	46, // 17: moksha.v1.ListRunsRequest.created_before:type_name -> google.protobuf.Timestamp
+	41, // 18: moksha.v1.ListRunsResponse.runs:type_name -> moksha.v1.Run
+	41, // 19: moksha.v1.GetEventLogResponse.run:type_name -> moksha.v1.Run
+	27, // 20: moksha.v1.GetEventLogResponse.event_log:type_name -> moksha.v1.LoggedEvent
+	46, // 21: moksha.v1.LoggedEvent.time:type_name -> google.protobuf.Timestamp
+	30, // 22: moksha.v1.GetHistoryResponse.entries:type_name -> moksha.v1.HistoryEntry
+	46, // 23: moksha.v1.HistoryEntry.time:type_name -> google.protobuf.Timestamp
+	34, // 24: moksha.v1.ListSchedulesResponse.schedules:type_name -> moksha.v1.Schedule
+	33, // 25: moksha.v1.ListSchedulesResponse.subscriptions:type_name -> moksha.v1.Subscription
+	47, // 26: moksha.v1.Subscription.debounce:type_name -> google.protobuf.Duration
+	47, // 27: moksha.v1.Subscription.max_wait:type_name -> google.protobuf.Duration
+	46, // 28: moksha.v1.Schedule.cursor:type_name -> google.protobuf.Timestamp
+	46, // 29: moksha.v1.Schedule.next_run:type_name -> google.protobuf.Timestamp
+	41, // 30: moksha.v1.GetRunResponse.run:type_name -> moksha.v1.Run
+	46, // 31: moksha.v1.Run.created_at:type_name -> google.protobuf.Timestamp
+	46, // 32: moksha.v1.Run.finished_at:type_name -> google.protobuf.Timestamp
+	45, // 33: moksha.v1.Run.steps:type_name -> moksha.v1.Step
+	44, // 34: moksha.v1.Run.step_counts:type_name -> moksha.v1.StepCounts
+	43, // 35: moksha.v1.Run.waiting:type_name -> moksha.v1.Waiting
+	42, // 36: moksha.v1.Run.signal_waits:type_name -> moksha.v1.SignalWait
+	46, // 37: moksha.v1.SignalWait.times_out_at:type_name -> google.protobuf.Timestamp
+	46, // 38: moksha.v1.Waiting.since:type_name -> google.protobuf.Timestamp
+	46, // 39: moksha.v1.Step.scheduled_at:type_name -> google.protobuf.Timestamp
+	46, // 40: moksha.v1.Step.finished_at:type_name -> google.protobuf.Timestamp
+	37, // 41: moksha.v1.RunService.StartRun:input_type -> moksha.v1.StartRunRequest
+	39, // 42: moksha.v1.RunService.GetRun:input_type -> moksha.v1.GetRunRequest
+	35, // 43: moksha.v1.RunService.SignalRun:input_type -> moksha.v1.SignalRunRequest
+	20, // 44: moksha.v1.RunService.CancelRun:input_type -> moksha.v1.CancelRunRequest
+	22, // 45: moksha.v1.RunService.ResumeRun:input_type -> moksha.v1.ResumeRunRequest
+	19, // 46: moksha.v1.RunService.ListRuns:input_type -> moksha.v1.ListRunsRequest
+	25, // 47: moksha.v1.RunService.GetEventLog:input_type -> moksha.v1.GetEventLogRequest
+	28, // 48: moksha.v1.RunService.GetHistory:input_type -> moksha.v1.GetHistoryRequest
+	31, // 49: moksha.v1.RunService.ListSchedules:input_type -> moksha.v1.ListSchedulesRequest
+	16, // 50: moksha.v1.RunService.ListPipelines:input_type -> moksha.v1.ListPipelinesRequest
+	10, // 51: moksha.v1.RunService.ListWorkers:input_type -> moksha.v1.ListWorkersRequest
+	13, // 52: moksha.v1.RunService.GetPipelineWorkers:input_type -> moksha.v1.GetPipelineWorkersRequest
+	7,  // 53: moksha.v1.RunService.ListPools:input_type -> moksha.v1.ListPoolsRequest
+	4,  // 54: moksha.v1.RunService.ListCode:input_type -> moksha.v1.ListCodeRequest
+	0,  // 55: moksha.v1.RunService.PlanRuns:input_type -> moksha.v1.PlanRunsRequest
+	38, // 56: moksha.v1.RunService.StartRun:output_type -> moksha.v1.StartRunResponse
+	40, // 57: moksha.v1.RunService.GetRun:output_type -> moksha.v1.GetRunResponse
+	36, // 58: moksha.v1.RunService.SignalRun:output_type -> moksha.v1.SignalRunResponse
+	21, // 59: moksha.v1.RunService.CancelRun:output_type -> moksha.v1.CancelRunResponse
+	23, // 60: moksha.v1.RunService.ResumeRun:output_type -> moksha.v1.ResumeRunResponse
+	24, // 61: moksha.v1.RunService.ListRuns:output_type -> moksha.v1.ListRunsResponse
+	26, // 62: moksha.v1.RunService.GetEventLog:output_type -> moksha.v1.GetEventLogResponse
+	29, // 63: moksha.v1.RunService.GetHistory:output_type -> moksha.v1.GetHistoryResponse
+	32, // 64: moksha.v1.RunService.ListSchedules:output_type -> moksha.v1.ListSchedulesResponse
+	17, // 65: moksha.v1.RunService.ListPipelines:output_type -> moksha.v1.ListPipelinesResponse
+	11, // 66: moksha.v1.RunService.ListWorkers:output_type -> moksha.v1.ListWorkersResponse
+	14, // 67: moksha.v1.RunService.GetPipelineWorkers:output_type -> moksha.v1.GetPipelineWorkersResponse
+	8,  // 68: moksha.v1.RunService.ListPools:output_type -> moksha.v1.ListPoolsResponse
+	5,  // 69: moksha.v1.RunService.ListCode:output_type -> moksha.v1.ListCodeResponse
+	1,  // 70: moksha.v1.RunService.PlanRuns:output_type -> moksha.v1.PlanRunsResponse
+	56, // [56:71] is the sub-list for method output_type
+	41, // [41:56] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_moksha_v1_run_proto_init() }
